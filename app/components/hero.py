@@ -12,72 +12,59 @@ def hero_section():
 
 <div class="hero-left">
 
-<div class="hero-badge">
-✨ AI Powered Roommate Intelligence
+<div class="hero-title" role="heading" aria-level="1">
+Find your perfect<br>
+roommate with<br>
+<span>AI that understands you.</span>
 </div>
 
-<h1 class="hero-brand">
-RoomSync AI
-</h1>
-
-<h2 class="hero-title">
-
-Find Your <span>Perfect</span><br>
-
-Roommate Using<br>
-
-<span>Explainable AI</span>
-
-</h2>
-
-<p class="hero-description">
-
-RoomSync AI analyzes over <strong>207 behavioural signals</strong>
-including sleep schedule, cleanliness, study habits,
-privacy preferences and lifestyle compatibility to
-recommend roommates you'll actually enjoy living with.
-
-</p>
-
-<div class="hero-highlights">
-
-<div>✓ 207 behavioural signals</div>
-
-<div>✓ Explainable AI recommendations</div>
-
-<div>✓ No personality quizzes</div>
-
+<div class="hero-description">
+RoomSync AI analyzes your lifestyle, habits and compatibility
+preferences to recommend roommates you'll actually enjoy living with.
 </div>
 
 <div class="hero-buttons">
-
-<a href="#" class="primary-btn">
-🚀 Start Matching
-</a>
-
+<button class="primary-btn">
+Start Matching Now →
+</button>
 
 <button class="secondary-btn">
 ▶ Watch Demo
 </button>
-
 </div>
 
-<div class="trust-row">
+<div class="hero-benefits">
 
-<div class="trust-item">
-🧠 Explainable AI
+<div class="benefit">
+<span class="dot"></span>
+<div>
+<h4>Personalized Matching</h4>
+<p>Matches based on your lifestyle and preferences</p>
+</div>
 </div>
 
-<div class="trust-item">
-⚡ XGBoost
+<div class="benefit">
+<span class="dot"></span>
+<div>
+<h4>Privacy First</h4>
+<p>Your data stays private and secure</p>
+</div>
 </div>
 
-<div class="trust-item">
-✨ SHAP
+<div class="benefit">
+<span class="dot"></span>
+<div>
+<h4>Instant Results</h4>
+<p>Get your compatibility score in seconds</p>
+</div>
 </div>
 
-<div class="trust-item">
-📊 207 Signals
+<div class="benefit">
+<span class="dot"></span>
+<div>
+<h4>96% Compatibility Accuracy</h4>
+<p>Highly accurate matches you can trust</p>
+</div>
 </div>
 
 </div>
@@ -91,52 +78,35 @@ recommend roommates you'll actually enjoy living with.
 <div class="compatibility-card">
 
 <div class="live-status">
-
 ● LIVE AI ENGINE
-
 </div>
 
-<h3>
-
+<div class="card-heading">
 🧠 AI Matching Engine
+</div>
 
-</h3>
-
-<p class="score-label">
-
+<div class="score-label">
 Compatibility Score
-
-</p>
+</div>
 
 <div class="compatibility-score">
-
 ❤️ 96.8%
-
 </div>
 
 <div class="progress-bar">
-
 <div class="progress-fill"></div>
-
 </div>
 
-<p class="prediction-text">
-
+<div class="prediction-text">
 Predicted using behavioural similarity,
 explainable AI and machine learning.
-
-</p>
+</div>
 
 <div class="match-list">
-
 <div>✓ Sleep Compatibility</div>
-
 <div>✓ Cleanliness Match</div>
-
 <div>✓ Privacy Balance</div>
-
 <div>✓ Study Schedule Match</div>
-
 </div>
 
 <div class="card-divider"></div>
@@ -166,5 +136,5 @@ explainable AI and machine learning.
 
 </div>
 """),
-unsafe_allow_html=True,
-)
+        unsafe_allow_html=True,
+    )

@@ -4,9 +4,6 @@ import base64
 from components.hero import hero_section
 
 
-from pathlib import Path
-import base64
-
 logo_path = (
     Path(__file__).parent.parent
     / "assets"
@@ -65,4 +62,4 @@ Get Started
 unsafe_allow_html=True,
 )
 
-hero_section()
+    hero_section()
