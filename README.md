@@ -166,4 +166,16 @@ This project demonstrates how behavioral analytics, machine learning, and featur
 |  |
 | ------- |
 | [0237-delete-node-in-a-linked-list](https://github.com/aarushiiii28/Smart-Resident-Matching-System/tree/master/0237-delete-node-in-a-linked-list) |
+## Hash Table
+|  |
+| ------- |
+| [1781-sum-of-beauty-of-all-substrings](https://github.com/aarushiiii28/Smart-Resident-Matching-System/tree/master/1781-sum-of-beauty-of-all-substrings) |
+## String
+|  |
+| ------- |
+| [1781-sum-of-beauty-of-all-substrings](https://github.com/aarushiiii28/Smart-Resident-Matching-System/tree/master/1781-sum-of-beauty-of-all-substrings) |
+## Counting
+|  |
+| ------- |
+| [1781-sum-of-beauty-of-all-substrings](https://github.com/aarushiiii28/Smart-Resident-Matching-System/tree/master/1781-sum-of-beauty-of-all-substrings) |
 <!---LeetCode Topics End-->
