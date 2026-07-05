@@ -159,3 +159,11 @@ The analysis showed that students with similar behavioral patterns tend to have 
 ## Conclusion
 
 This project demonstrates how behavioral analytics, machine learning, and feature engineering can be combined to build an intelligent roommate recommendation system. By leveraging clustering, advanced feature engineering, and XGBoost-based classification, the system achieves strong predictive performance while providing actionable insights into the behavioral factors that drive successful roommate relationships.
+
+<!---LeetCode Topics Start-->
+# LeetCode Topics
+## Linked List
+|  |
+| ------- |
+| [0237-delete-node-in-a-linked-list](https://github.com/aarushiiii28/Smart-Resident-Matching-System/tree/master/0237-delete-node-in-a-linked-list) |
+<!---LeetCode Topics End-->
