@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+
+
+a,
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+.cursor-pointer,
+a *,
+button *,
+[role="button"] * {
+    cursor: url("/images/cursor_hand.png?v=3") 5 0, pointer !important;
+}
+
+body {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(8, 6, 18, 0.72) 0%,
+            rgba(12, 8, 28, 0.55) 50%,
+            rgba(8, 6, 18, 0.68) 100%
+        ),
+        url("/images/background.jpg?v=2");
+
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+
+    color: white;
+    font-family: Inter, sans-serif;
+    min-height: 100vh;
+}
