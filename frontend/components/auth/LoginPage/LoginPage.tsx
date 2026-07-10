@@ -1,9 +1,11 @@
-import LoginImage from "@/components/auth/LoginPage/LoginImage";
-import RegisterCard from "@/components/auth/LoginPage/RegisterCard";
+import LoginImage from "./LoginImage";
+import LoginCard from "./LoginCard";
 
-export default function Register() {
+export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[#05050c] flex items-center justify-center p-6">
+
+      {/* Outer container */}
       <div
         className="
           w-full max-w-[1040px]
@@ -23,7 +25,7 @@ export default function Register() {
 
         {/* Right half: Form Panel */}
         <div className="w-full md:w-1/2 p-10 sm:p-14 lg:p-16 flex flex-col justify-center">
-          <RegisterCard />
+          <LoginCard />
         </div>
       </div>
     </main>

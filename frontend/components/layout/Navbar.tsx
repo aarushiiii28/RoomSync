@@ -76,7 +76,8 @@ export default function Navbar() {
 
         {/* Right Buttons */}
         <div className="flex flex-1 justify-end items-center gap-3">
-          <button
+          <Link
+            href="/login"
             className="
               h-9
               px-5
@@ -90,12 +91,15 @@ export default function Navbar() {
               transition
               duration-200
               hover:bg-white/10
+              flex
+              items-center
             "
           >
             Login / Register
-          </button>
+          </Link>
 
-          <button
+          <Link
+            href="/register"
             className="
               h-9
               px-5
@@ -109,10 +113,12 @@ export default function Navbar() {
               duration-200
               hover:opacity-90
               hover:shadow-[0_6px_20px_rgba(244,114,182,0.4)]
+              flex
+              items-center
             "
           >
             Join RoomSync
-          </button>
+          </Link>
         </div>
 
       </nav>
