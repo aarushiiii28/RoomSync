@@ -23,6 +23,7 @@ export default function FeatureCard({ feature }: Props) {
         border-white/10
         bg-[#121923]
         p-10
+        text-center
       "
     >
       <div className="h-56 flex items-center justify-center">

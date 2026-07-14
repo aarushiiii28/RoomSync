@@ -5,7 +5,7 @@ import AiOrb from "./AiOrb";
 
 export default function HeroRight() {
   return (
-    <div className="flex-1 flex justify-center items-center relative min-h-[520px]">
+    <div className="flex-1 flex justify-center items-center relative min-h-[400px]">
       {/* Large ambient glow behind everything */}
       <div
         className="absolute inset-0 pointer-events-none"

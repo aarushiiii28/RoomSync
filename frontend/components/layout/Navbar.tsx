@@ -7,7 +7,6 @@ const navItems = [
   { name: "Home", href: "/", isAnchor: false },
   { name: "How It Works", href: "how-it-works", isAnchor: true },
   { name: "Features", href: "features", isAnchor: true },
-  { name: "Roadmap", href: "roadmap", isAnchor: true },
   { name: "About", href: "about", isAnchor: true },
 ];
 
@@ -48,7 +47,7 @@ export default function Navbar() {
         </Link>
 
         {/* Center Navigation */}
-        <div className="flex flex-1 justify-center items-center gap-12">
+        <div className="flex flex-1 justify-center items-center gap-16">
           {navItems.map((item) => {
             const LinkComponent = item.isAnchor ? "button" : Link;
             const props = item.isAnchor 

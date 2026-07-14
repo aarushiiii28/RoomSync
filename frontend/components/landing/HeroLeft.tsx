@@ -1,5 +1,4 @@
 import HeroButtons from "./HeroButtons";
-import HeroBenefits from "./HeroBenefits";
 
 export default function HeroLeft() {
   return (
@@ -30,7 +29,6 @@ export default function HeroLeft() {
 
       <HeroButtons />
 
-      <HeroBenefits />
 
     </div>
   );

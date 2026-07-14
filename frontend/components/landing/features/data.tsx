@@ -18,7 +18,7 @@ export const features: Feature[] = [
 
   {
     id: 2,
-    title: "Explainable AI",
+    title: "Smart Insights",
     description:
       "Every recommendation includes a clear explanation so you understand why someone is a good match.",
     illustration: <ExplainableAI />,
@@ -34,15 +34,15 @@ export const features: Feature[] = [
 
   {
     id: 4,
-    title: "Real Compatibility",
+    title: "Verified Community",
     description:
-      "Matches are based on behaviour, not just location, budget or shared interests.",
+      "Connect with verified people and trusted profiles, making it safer and easier to find the right roommate.",
     illustration: <Compatibility />,
   },
 
   {
     id: 5,
-    title: "Smart Recommendations",
+    title: "Tailored Recommendations",
     description:
       "Receive personalized roommate suggestions without endlessly browsing profiles.",
     illustration: <Recommendation />,
@@ -50,9 +50,9 @@ export const features: Feature[] = [
 
   {
     id: 6,
-    title: "Built for Students",
+    title: "Beyond the Bio",
     description:
-      "Designed specifically for hostels, PGs, apartments and shared student accommodation.",
+      "Profiles reveal how people actually live—not just what they choose to write about themselves.",
     illustration: <Students />,
   },
 ];
