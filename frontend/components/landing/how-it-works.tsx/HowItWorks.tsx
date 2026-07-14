@@ -41,7 +41,7 @@ export default function HowItWorks() {
   const step = steps[current];
 
   return (
-    <section id="how-it-works" className="relative overflow-hidden min-h-screen flex flex-col">
+    <section className="relative overflow-hidden flex flex-col">
 
       <div className="max-w-5xl mx-auto px-8 pt-24 pb-16 text-center flex-shrink-0">
         <motion.div

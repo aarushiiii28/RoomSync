@@ -23,8 +23,8 @@ export default function HeroLeft() {
         </span>
       </h1>
 
-      <p className="mt-4 max-w-md text-[14px] leading-6 text-gray-400">
-        RoomSync AI analyzes your lifestyle, habits and compatibility
+      <p className="mt-4 max-w-md text-[14px] leading-6 text-[#FDFCF0]">
+        RoomSync analyzes your lifestyle, habits and compatibility
         preferences to recommend roommates you'll actually enjoy living with.
       </p>
 

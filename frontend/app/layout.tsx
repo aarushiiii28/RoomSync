@@ -12,7 +12,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "RoomSync AI",
+  title: "RoomSync",
 };
 
 export default function RootLayout({

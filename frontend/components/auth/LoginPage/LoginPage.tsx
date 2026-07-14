@@ -3,7 +3,7 @@ import LoginCard from "./LoginCard";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-[#05050c] flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center p-6">
 
       {/* Outer container */}
       <div

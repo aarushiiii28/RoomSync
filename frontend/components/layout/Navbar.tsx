@@ -4,14 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 
 const navItems = [
-  { name: "Home", href: "/" },
-  { name: "How It Works", href: "/how-it-works" },
-  { name: "Features", href: "#features" },
-  { name: "Roadmap", href: "#roadmap" },
-  { name: "About", href: "#about" },
+  { name: "Home", href: "/", isAnchor: false },
+  { name: "How It Works", href: "how-it-works", isAnchor: true },
+  { name: "Features", href: "features", isAnchor: true },
+  { name: "Roadmap", href: "roadmap", isAnchor: true },
+  { name: "About", href: "about", isAnchor: true },
 ];
 
 export default function Navbar() {
+  const handleScroll = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <header className="w-full flex justify-center pt-12 -mb-6 px-6 relative z-10">
       <nav
@@ -29,49 +36,57 @@ export default function Navbar() {
         {/* Logo – kept as-is */}
         <Link href="/" className="flex items-center gap-3 flex-shrink-0 flex-1">
           <Image
-            src="/logos/roomsync_logo.png"
-            alt="RoomSync AI"
+            src="/logos/roomsync_logo.svg"
+            alt="RoomSync"
             width={32}
             height={32}
             priority
           />
           <span className="font-sans text-[18px] font-semibold text-white tracking-tight whitespace-nowrap">
-            RoomSync AI
+            RoomSync
           </span>
         </Link>
 
         {/* Center Navigation */}
         <div className="flex flex-1 justify-center items-center gap-12">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="
-                group
-                relative
-                whitespace-nowrap
-                text-[14px]
-                font-medium
-                text-gray-400
-                hover:text-white
-                transition
-                duration-200
-                pb-0.5
-              "
-            >
-              {item.name}
-              <span
+          {navItems.map((item) => {
+            const LinkComponent = item.isAnchor ? "button" : Link;
+            const props = item.isAnchor 
+              ? { onClick: () => handleScroll(item.href) }
+              : { href: item.href };
+
+            return (
+              <LinkComponent
+                key={item.name}
+                {...props}
                 className="
-                  absolute bottom-0 left-0
-                  h-[2px] w-0
-                  rounded-full
-                  bg-pink-400
-                  transition-all duration-300
-                  group-hover:w-full
+                  group
+                  relative
+                  whitespace-nowrap
+                  text-[14px]
+                  font-medium
+                  text-gray-400
+                  hover:text-white
+                  transition
+                  duration-200
+                  pb-0.5
+                  cursor-pointer
                 "
-              />
-            </Link>
-          ))}
+              >
+                {item.name}
+                <span
+                  className="
+                    absolute bottom-0 left-0
+                    h-[2px] w-0
+                    rounded-full
+                    bg-pink-400
+                    transition-all duration-300
+                    group-hover:w-full
+                  "
+                />
+              </LinkComponent>
+            );
+          })}
         </div>
 
         {/* Right Buttons */}

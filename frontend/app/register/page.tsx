@@ -3,7 +3,7 @@ import RegisterCard from "@/components/auth/LoginPage/RegisterCard";
 
 export default function Register() {
   return (
-    <main className="min-h-screen bg-[#05050c] flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center p-6">
       <div
         className="
           w-full max-w-[1040px]
