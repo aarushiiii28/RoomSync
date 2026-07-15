@@ -216,3 +216,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# ===============================
+# RoomSync Project
+# ===============================
+
+# Backend environment
+backend/.env
+backend/venv/
+
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Next.js logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

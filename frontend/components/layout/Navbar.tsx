@@ -49,41 +49,51 @@ export default function Navbar() {
         {/* Center Navigation */}
         <div className="flex flex-1 justify-center items-center gap-16">
           {navItems.map((item) => {
-            const LinkComponent = item.isAnchor ? "button" : Link;
-            const props = item.isAnchor 
-              ? { onClick: () => handleScroll(item.href) }
-              : { href: item.href };
+            const sharedClass = `
+              group
+              relative
+              whitespace-nowrap
+              text-[14px]
+              font-medium
+              text-gray-400
+              hover:text-white
+              transition
+              duration-200
+              pb-0.5
+              cursor-pointer
+            `;
 
-            return (
-              <LinkComponent
-                key={item.name}
-                {...props}
+            const underline = (
+              <span
                 className="
-                  group
-                  relative
-                  whitespace-nowrap
-                  text-[14px]
-                  font-medium
-                  text-gray-400
-                  hover:text-white
-                  transition
-                  duration-200
-                  pb-0.5
-                  cursor-pointer
+                  absolute bottom-0 left-0
+                  h-[2px] w-0
+                  rounded-full
+                  bg-pink-400
+                  transition-all duration-300
+                  group-hover:w-full
                 "
+              />
+            );
+
+            return item.isAnchor ? (
+              <button
+                key={item.name}
+                onClick={() => handleScroll(item.href)}
+                className={sharedClass}
               >
                 {item.name}
-                <span
-                  className="
-                    absolute bottom-0 left-0
-                    h-[2px] w-0
-                    rounded-full
-                    bg-pink-400
-                    transition-all duration-300
-                    group-hover:w-full
-                  "
-                />
-              </LinkComponent>
+                {underline}
+              </button>
+            ) : (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={sharedClass}
+              >
+                {item.name}
+                {underline}
+              </Link>
             );
           })}
         </div>
