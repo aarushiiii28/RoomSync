@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+
+# Environment Variables
+.env
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# Type checkers
+.mypy_cache/
+.pyright/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
