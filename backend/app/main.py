@@ -1,14 +1,17 @@
 from fastapi import FastAPI
 
+from app.routers.auth import router as auth_router
+
 app = FastAPI(
-    title="RoomSync AI API",
+    title="RoomSync API",
     version="1.0.0",
-    description="Backend API for RoomSync AI",
 )
+
+app.include_router(auth_router)
 
 
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to RoomSync AI Backend 🚀"
+        "message": "RoomSync Backend Running"
     }
