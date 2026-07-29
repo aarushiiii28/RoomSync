@@ -20,8 +20,6 @@ def register(
     user_data: UserRegister,
     db: Session = Depends(get_db),
 ):
-    print(">>> REGISTER ENDPOINT CALLED <<<")
-
     try:
         user = register_user(db, user_data)
         return user
