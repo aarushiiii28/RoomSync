@@ -1,12 +1,21 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import CITEXT
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.user_profile import UserProfile
+    from app.models.location import Location
+    from app.models.lifestyle_profile import LifestyleProfile
+    from app.models.roommate_preference import RoommatePreference
 
 
 class User(Base):
@@ -19,9 +28,10 @@ class User(Base):
     )
 
     username: Mapped[str] = mapped_column(
-        String(30),
-        unique=True,
-        nullable=False,
+    String(30),
+    unique=True,
+    nullable=False,
+    index=True,
     )
 
     email: Mapped[str | None] = mapped_column(
@@ -31,11 +41,6 @@ class User(Base):
     )
     
 
-    phone_number: Mapped[str | None] = mapped_column(
-        String(20),
-        unique=True,
-        nullable=True,
-    )
 
     password_hash: Mapped[str] = mapped_column(
         Text,
@@ -49,12 +54,6 @@ class User(Base):
         server_default="false",
     )
 
-    is_phone_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default="false",
-    )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
@@ -79,4 +78,36 @@ class User(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+    # -------------------------------------------------------------------------
+    # Phase 2 — one-to-one back-references (uselist=False on the parent side)
+    # -------------------------------------------------------------------------
+
+    profile: Mapped[Optional["UserProfile"]] = relationship(
+        "UserProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    location: Mapped[Optional["Location"]] = relationship(
+        "Location",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    lifestyle_profile: Mapped[Optional["LifestyleProfile"]] = relationship(
+        "LifestyleProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    roommate_preference: Mapped[Optional["RoommatePreference"]] = relationship(
+        "RoommatePreference",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
