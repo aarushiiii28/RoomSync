@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { User } from "lucide-react";
 
 import AuthInput from "../shared/AuthInput";
 import PasswordInput from "../shared/PasswordInput";
@@ -9,30 +11,97 @@ import PrimaryButton from "../shared/PrimaryButton";
 import Divider from "../shared/Divider";
 import SocialLogin from "./SocialLogin";
 
+import { login } from "@/services/auth";
+import { getMyOnboarding } from "@/services/onboarding";
+
 export default function LoginForm() {
+  const router = useRouter();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+
+    if (!username.trim()) {
+      setError("Username is required.");
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await login({ username, password });
+
+      // Check existing onboarding state to route appropriately
+      try {
+        await getMyOnboarding();
+        // Onboarding complete -> redirect to dashboard
+        router.replace("/dashboard");
+      } catch (onboardingErr: unknown) {
+        const errorObj = onboardingErr as { response?: { status?: number } };
+        if (errorObj?.response?.status === 404) {
+          // Onboarding incomplete -> redirect to onboarding wizard
+          router.replace("/onboarding");
+        } else {
+          setError(
+            "Failed to verify onboarding status. Please try logging in again."
+          );
+        }
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { detail?: string } } };
+      setError(
+        errorObj?.response?.data?.detail ?? "Invalid username or password."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <form className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
 
       <AuthInput
-        type="email"
-        placeholder="Email address"
-        icon={<Mail size={16} />}
+        icon={<User size={16} />}
+        placeholder="Username / Email Address"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        disabled={loading}
+        autoComplete="username"
       />
 
-      <PasswordInput />
+      <PasswordInput
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        disabled={loading}
+        autoComplete="current-password"
+      />
+
+      {error && (
+        <p className="text-sm text-red-400">{error}</p>
+      )}
 
       {/* Remember Me + Forgot Password */}
       <div className="flex items-center justify-between pt-1">
-
         <label className="flex items-center gap-2.5 text-[13px] text-[#8b92a5] cursor-pointer select-none">
           <input
             type="checkbox"
+            disabled={loading}
             className="
               w-3.5 h-3.5
               rounded-[4px]
               border border-white/20
               bg-transparent
-              accent-violet-500
+              accent-[#F8B4C8]
               cursor-pointer
             "
           />
@@ -43,20 +112,20 @@ export default function LoginForm() {
           type="button"
           className="
             text-[13px]
-            text-[#9b51e0]
-            hover:text-[#a855f7]
-            transition-colors
+            text-[#F8B4C8]
+            hover:opacity-80
+            transition-all
             duration-200
+            cursor-pointer
           "
         >
           Forgot password?
         </button>
-
       </div>
 
       <div className="pt-1">
-        <PrimaryButton>
-          Log in
+        <PrimaryButton disabled={loading}>
+          {loading ? "Signing in..." : "Log in"}
         </PrimaryButton>
       </div>
 
@@ -69,9 +138,10 @@ export default function LoginForm() {
         <Link
           href="/register"
           className="
-            text-[#9b51e0]
-            hover:text-[#a855f7]
-            transition-colors
+            text-[#F8B4C8]
+            hover:opacity-80
+            font-medium
+            transition-all
             duration-200
           "
         >

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { name: "Home", href: "/", isAnchor: false },
@@ -11,6 +12,8 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const { isAuthenticated, profileComplete, loading } = useAuth();
+
   const handleScroll = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -69,7 +72,7 @@ export default function Navbar() {
                   absolute bottom-0 left-0
                   h-[2px] w-0
                   rounded-full
-                  bg-pink-400
+                  bg-[#F8B4C8]
                   transition-all duration-300
                   group-hover:w-full
                 "
@@ -100,49 +103,127 @@ export default function Navbar() {
 
         {/* Right Buttons */}
         <div className="flex flex-1 justify-end items-center gap-3">
-          <Link
-            href="/login"
-            className="
-              h-9
-              px-5
-              rounded-xl
-              border
-              border-white/15
-              text-white
-              text-[13px]
-              font-medium
-              whitespace-nowrap
-              transition
-              duration-200
-              hover:bg-white/10
-              flex
-              items-center
-            "
-          >
-            Login / Register
-          </Link>
+          {!loading && isAuthenticated ? (
+            profileComplete ? (
+              /* Authenticated + Profile Complete */
+              <Link
+                href="/dashboard"
+                className="
+                  h-9
+                  px-5
+                  rounded-xl
+                  border
+                  border-white/15
+                  text-white
+                  text-[13px]
+                  font-medium
+                  whitespace-nowrap
+                  transition
+                  duration-200
+                  hover:bg-white/10
+                  flex
+                  items-center
+                "
+              >
+                Dashboard
+              </Link>
+            ) : (
+              /* Authenticated + Incomplete Profile */
+              <>
+                <Link
+                  href="/onboarding?notice=complete_first"
+                  className="
+                    h-9
+                    px-4
+                    rounded-xl
+                    border
+                    border-white/10
+                    text-zinc-400
+                    text-[13px]
+                    font-medium
+                    whitespace-nowrap
+                    transition
+                    duration-200
+                    hover:bg-white/5
+                    hover:text-zinc-200
+                    flex
+                    items-center
+                  "
+                >
+                  Dashboard
+                </Link>
 
-          <Link
-            href="/register"
-            className="
-              h-9
-              px-5
-              rounded-xl
-              font-semibold
-              text-[13px]
-              text-white
-              whitespace-nowrap
-              bg-pink-400
-              transition
-              duration-200
-              hover:opacity-90
-              hover:shadow-[0_6px_20px_rgba(244,114,182,0.4)]
-              flex
-              items-center
-            "
-          >
-            Join RoomSync
-          </Link>
+                <Link
+                  href="/onboarding"
+                  className="
+                    h-9
+                    px-5
+                    rounded-xl
+                    font-bold
+                    text-[13px]
+                    text-[#161925]
+                    whitespace-nowrap
+                    bg-[#F8B4C8]
+                    transition
+                    duration-200
+                    hover:opacity-95
+                    hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
+                    flex
+                    items-center
+                  "
+                >
+                  Complete Profile
+                </Link>
+              </>
+            )
+          ) : (
+            /* Unauthenticated */
+            <>
+              <Link
+                href="/login"
+                className="
+                  h-9
+                  px-5
+                  rounded-xl
+                  border
+                  border-white/15
+                  text-white
+                  text-[13px]
+                  font-medium
+                  whitespace-nowrap
+                  transition
+                  duration-200
+                  hover:bg-white/10
+                  flex
+                  items-center
+                "
+              >
+                Login / Register
+              </Link>
+
+              <Link
+                href="/register"
+                className="
+                  h-9
+                  px-5
+                  rounded-xl
+                  font-bold
+                  text-[13px]
+                  text-[#161925]
+                  whitespace-nowrap
+                  bg-[#F8B4C8]
+                  transition
+                  duration-200
+                  hover:opacity-95
+                  hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
+                  flex
+                  items-center
+                "
+              >
+                Join RoomSync
+              </Link>
+            </>
+          )}
         </div>
 
       </nav>

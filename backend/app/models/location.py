@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Float, ForeignKey, Numeric, String, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,11 +17,10 @@ if TYPE_CHECKING:
 
 class Location(Base):
     """
-    Stores the current geographic location and search preferences for a user.
+    Stores the intended accommodation search location for a user.
 
     latitude / longitude use Numeric(9, 6) to support GPS-level precision
     (e.g. 12.971599, 77.594566) without floating-point drift.
-    search_radius_km is stored as Float to allow fractional values (e.g. 2.5 km).
     """
 
     __tablename__ = "locations"
@@ -51,8 +50,6 @@ class Location(Base):
     # GPS coordinates — Numeric avoids floating-point rounding issues
     latitude: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     longitude: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
-
-    search_radius_km: Mapped[float] = mapped_column(Float, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

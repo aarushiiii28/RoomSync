@@ -8,7 +8,7 @@ export default function FeaturesHeader() {
           tracking-[0.35em]
           text-sm
           font-semibold
-          text-violet-400
+          text-[#F8B4C8]
         "
       >
         WHY ROOMSYNC WORKS

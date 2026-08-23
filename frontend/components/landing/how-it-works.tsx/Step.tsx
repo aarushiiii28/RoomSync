@@ -51,7 +51,7 @@ export default function Step({ step, index }: Props) {
         font-semibold
         tracking-[0.3em]
         uppercase
-        text-violet-400
+        text-[#F8B4C8]
       "
       >
         Step {step.id}

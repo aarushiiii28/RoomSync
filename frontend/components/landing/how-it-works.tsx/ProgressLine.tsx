@@ -28,8 +28,8 @@ export default function ProgressLine() {
           top-16
           h-px
           bg-gradient-to-r
-          from-violet-500
-          via-fuchsia-500
+          from-[#F8B4C8]
+          via-pink-400
           to-cyan-400
         "
       />
@@ -69,7 +69,7 @@ export default function ProgressLine() {
               font-semibold
               text-white
               shadow-lg
-              shadow-violet-500/10
+              shadow-[#F8B4C8]/10
             "
           >
             {number}

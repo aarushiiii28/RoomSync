@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 
 const metrics = [
-  { label: "Sleep Match",     value: 98, color: "#a78bfa" },
+  { label: "Sleep Match",     value: 98, color: "#F8B4C8" },
   { label: "Study Habits",    value: 91, color: "#22d3ee" },
   { label: "Privacy",         value: 94, color: "#f472b6" },
-  { label: "Lifestyle",       value: 96, color: "#c084fc" },
+  { label: "Lifestyle",       value: 96, color: "#fb7185" },
 ];
 
 function ProgressBar({ value, color, delay }: { value: number; color: string; delay: number }) {
@@ -37,7 +37,7 @@ export default function CompatibilityCard() {
       transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
       style={{
         boxShadow:
-          "0 0 0 1px rgba(139,92,246,0.18), 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+          "0 0 0 1px rgba(248,180,200,0.22), 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
       }}
       className="
         relative z-10
@@ -54,7 +54,7 @@ export default function CompatibilityCard() {
       <div
         className="absolute top-0 left-0 right-0 h-[1px]"
         style={{
-          background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.6), rgba(217,70,239,0.4), transparent)",
+          background: "linear-gradient(90deg, transparent, rgba(248,180,200,0.7), rgba(251,113,133,0.5), transparent)",
         }}
       />
 
@@ -81,7 +81,7 @@ export default function CompatibilityCard() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
             style={{
-              background: "linear-gradient(135deg, #f472b6 0%, #c084fc 50%, #818cf8 100%)",
+              background: "linear-gradient(135deg, #f472b6 0%, #F8B4C8 50%, #fb7185 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -113,18 +113,18 @@ export default function CompatibilityCard() {
         <div className="flex items-center gap-1.5">
           <div
             className="w-4 h-4 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)" }}
+            style={{ background: "rgba(248,180,200,0.2)", border: "1px solid rgba(248,180,200,0.3)" }}
           >
-            <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#F8B4C8]" />
           </div>
           <span className="text-[10px] text-gray-500">AI Matching Engine</span>
         </div>
         <span
           className="text-[10px] font-medium px-2 py-0.5 rounded-full"
           style={{
-            background: "rgba(139,92,246,0.15)",
-            border: "1px solid rgba(139,92,246,0.25)",
-            color: "#c084fc",
+            background: "rgba(248,180,200,0.15)",
+            border: "1px solid rgba(248,180,200,0.25)",
+            color: "#F8B4C8",
           }}
         >
           v2.4

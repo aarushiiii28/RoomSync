@@ -38,6 +38,24 @@ class CleanlinessLevel(str, enum.Enum):
     relaxed = "relaxed"
 
 
+class ImportanceLevel(str, enum.Enum):
+    """How important a habit, trait, or responsibility is to the user."""
+
+    not_important = "not_important"
+    slightly_important = "slightly_important"
+    important = "important"
+    very_important = "very_important"
+
+
+class ToleranceLevel(str, enum.Enum):
+    """Comfort / tolerance level toward a roommate's habit."""
+
+    not_comfortable = "not_comfortable"
+    slightly_comfortable = "slightly_comfortable"
+    comfortable = "comfortable"
+    very_comfortable = "very_comfortable"
+
+
 class SmokingHabit(str, enum.Enum):
     """User's smoking behaviour."""
 
@@ -87,3 +105,81 @@ class SleepSchedule(str, enum.Enum):
     early_bird = "early_bird"
     night_owl = "night_owl"
     flexible = "flexible"
+
+
+class AccommodationType(str, enum.Enum):
+    """Type of accommodation preferred by the user."""
+
+    pg = "pg"
+    flat = "flat"
+    apartment = "apartment"
+    house = "house"
+    co_living = "co_living"
+    other = "other"
+
+
+class RoomType(str, enum.Enum):
+    """Room occupancy preference."""
+
+    private = "private"
+    shared = "shared"
+
+
+class MoveInTimeframe(str, enum.Enum):
+    """Approximate move-in timeframe for roommate search."""
+
+    within_1_month = "within_1_month"
+    one_to_three_months = "one_to_three_months"
+    three_to_six_months = "three_to_six_months"
+    six_to_twelve_months = "six_to_twelve_months"
+    not_sure = "not_sure"
+
+
+class LeaseDuration(str, enum.Enum):
+    """Preferred duration of lease."""
+
+    one_month = "1_month"
+    three_months = "3_months"
+    six_months = "6_months"
+    twelve_months = "12_months"
+    flexible = "flexible"
+
+
+# ---------------------------------------------------------------------------
+# Roommate Compatibility & Personality Preference Enums
+# ---------------------------------------------------------------------------
+
+
+class SocialStyle(str, enum.Enum):
+    """Preferred social dynamic with a roommate."""
+
+    very_private = "very_private"
+    somewhat_private = "somewhat_private"
+    balanced = "balanced"
+    very_social = "very_social"
+
+
+class PersonalSpacePreference(str, enum.Enum):
+    """Preferred amount of personal space at home."""
+
+    a_lot = "a_lot"
+    moderate = "moderate"
+    comfortable_sharing = "comfortable_sharing"
+
+
+class CommunicationStyle(str, enum.Enum):
+    """Preferred communication style with a roommate."""
+
+    mostly_independent = "mostly_independent"
+    occasional_checkins = "occasional_checkins"
+    open_communication = "open_communication"
+    very_communicative = "very_communicative"
+
+
+class HouseholdResponsibilityPreference(str, enum.Enum):
+    """Preference for managing shared household chores and responsibilities."""
+
+    mostly_separate = "mostly_separate"
+    flexible = "flexible"
+    shared_equally = "shared_equally"
+    clearly_divided = "clearly_divided"

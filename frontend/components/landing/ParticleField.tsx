@@ -13,10 +13,10 @@ interface Particle {
 }
 
 const COLORS = [
-  "rgba(139,92,246,",   // violet
-  "rgba(217,70,239,",   // fuchsia
+  "rgba(248,180,200,",   // pink #F8B4C8
+  "rgba(251,113,133,",   // rose
   "rgba(6,182,212,",    // cyan
-  "rgba(236,72,153,",   // pink
+  "rgba(244,114,182,",   // soft pink
 ];
 
 export default function ParticleField({ count = 28 }: { count?: number }) {
@@ -66,7 +66,7 @@ export default function ParticleField({ count = 28 }: { count?: number }) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(139,92,246,${opacity})`;
+            ctx.strokeStyle = `rgba(248,180,200,${opacity})`;
             ctx.lineWidth = 0.6;
             ctx.stroke();
           }

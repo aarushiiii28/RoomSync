@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
+import UserProfileMenu from "@/components/layout/UserProfileMenu";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,7 +14,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "RoomSync",
+  title: "RoomSync - Roommate Matching Platform",
+  description: "Find compatible roommates with AI that understands your lifestyle and habits.",
 };
 
 export default function RootLayout({
@@ -25,7 +28,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${spaceGrotesk.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+          <UserProfileMenu />
+        </AuthProvider>
+      </body>
     </html>
   );
 }

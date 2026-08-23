@@ -1,5 +1,5 @@
-export default function Lifestyle() {
+export default function Compatibility() {
   return (
-    <div className="w-40 h-40 rounded-full bg-violet-500/20 border border-violet-500/30" />
+    <div className="w-40 h-40 rounded-full bg-[#F8B4C8]/20 border border-[#F8B4C8]/30" />
   );
 }

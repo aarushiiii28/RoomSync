@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
+from app.routers.onboarding import router as onboarding_router
 
 app = FastAPI(
     title="RoomSync API",
@@ -22,6 +23,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(onboarding_router)
 
 @app.get("/")
 def root():

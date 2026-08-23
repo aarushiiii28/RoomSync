@@ -51,11 +51,11 @@ export default function HowItWorks() {
         >
           <h2 className="mt-2 text-4xl md:text-5xl font-bold text-white leading-tight">
             Finding the perfect roommate<br />
-            shouldn't feel like gambling.
+            shouldn&apos;t feel like gambling.
           </h2>
           <p className="mt-6 max-w-2xl mx-auto text-base md:text-lg leading-8 text-zinc-400">
             RoomSync understands how you actually live, then intelligently recommends
-            roommates you'll genuinely enjoy sharing a space with.
+            roommates you&apos;ll genuinely enjoy sharing a space with.
           </p>
         </motion.div>
       </div>

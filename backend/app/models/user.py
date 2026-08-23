@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from app.models.location import Location
     from app.models.lifestyle_profile import LifestyleProfile
     from app.models.roommate_preference import RoommatePreference
+    from app.models.accommodation_preference import AccommodationPreference
+
 
 
 class User(Base):
@@ -111,3 +113,10 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+
+    accommodation_preference: Mapped[Optional["AccommodationPreference"]] = relationship(
+        "AccommodationPreference",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )

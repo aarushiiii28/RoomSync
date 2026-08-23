@@ -14,8 +14,8 @@ const benefits: Benefit[] = [
     title: "Personalized Matching",
     description: "Matches based on your lifestyle and preferences",
     Icon: UserCheck,
-    color: "#a78bfa",
-    glow: "rgba(167,139,250,0.55)",
+    color: "#F8B4C8",
+    glow: "rgba(248,180,200,0.55)",
   },
   {
     title: "Privacy First",
