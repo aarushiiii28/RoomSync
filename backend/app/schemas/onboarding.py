@@ -61,7 +61,7 @@ class OnboardingPartialUpdate(BaseModel):
     """
 
     profile: ProfileCreate | ProfileUpdate | None = None
-    location: LocationUpdate | None = None
+    location: LocationCreate | LocationUpdate | None = None
     accommodation: AccommodationCreate | AccommodationUpdate | None = None
     lifestyle: LifestyleCreate | LifestyleUpdate | None = None
     preferences: PreferenceCreate | PreferenceUpdate | None = None

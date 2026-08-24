@@ -118,8 +118,16 @@ CREATE TABLE IF NOT EXISTS lifestyle_profiles (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     sleep_time TEXT NOT NULL,
     wake_time TEXT NOT NULL,
+    schedule_consistency INTEGER NOT NULL DEFAULT 3,
+    study_hours INTEGER NOT NULL DEFAULT 3,
+    noise_sleep_tolerance INTEGER NOT NULL DEFAULT 3,
     cleanliness TEXT NOT NULL,
+    cleanliness_score INTEGER NOT NULL DEFAULT 3,
     cleanliness_importance TEXT NOT NULL DEFAULT 'important',
+    privacy_preference INTEGER NOT NULL DEFAULT 3,
+    talkativeness INTEGER NOT NULL DEFAULT 3,
+    friendship_expectation INTEGER NOT NULL DEFAULT 3,
+    gaming_hours INTEGER NOT NULL DEFAULT 0,
     smoking TEXT NOT NULL,
     smoking_tolerance TEXT NOT NULL DEFAULT 'not_comfortable',
     drinking TEXT NOT NULL,
@@ -128,9 +136,9 @@ CREATE TABLE IF NOT EXISTS lifestyle_profiles (
     pet_tolerance TEXT NOT NULL DEFAULT 'comfortable',
     guest_frequency TEXT NOT NULL,
     guest_tolerance TEXT NOT NULL DEFAULT 'comfortable',
-    cooking TEXT NOT NULL,
+    cooking TEXT NOT NULL DEFAULT 'sometimes',
     cooking_tolerance TEXT NOT NULL DEFAULT 'comfortable',
-    party_frequency TEXT NOT NULL,
+    party_frequency TEXT NOT NULL DEFAULT 'sometimes',
     party_tolerance TEXT NOT NULL DEFAULT 'comfortable',
     fitness TEXT NOT NULL,
     music INTEGER NOT NULL DEFAULT 0,
@@ -448,7 +456,10 @@ class TestOnboardingRouterAuth(_TestBase):
     # ------------------------------------------------------------------
     def test_11_service_tests_still_pass(self):
         import importlib
-        import tests.test_onboarding_service as svc_tests
+        try:
+            import test_onboarding_service as svc_tests
+        except ImportError:
+            import tests.test_onboarding_service as svc_tests
         importlib.reload(svc_tests)
 
         loader = unittest.TestLoader()

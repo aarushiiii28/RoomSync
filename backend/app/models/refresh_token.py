@@ -1,5 +1,5 @@
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -18,6 +18,7 @@ class RefreshToken(Base):
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         primary_key=True,
+        default=uuid4,
         server_default=func.gen_random_uuid(),
     )
 

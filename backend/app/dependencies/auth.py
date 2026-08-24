@@ -10,7 +10,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.services.security import decode_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login/json")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_current_user(

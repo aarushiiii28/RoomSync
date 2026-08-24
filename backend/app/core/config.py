@@ -1,4 +1,7 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
@@ -15,7 +18,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_PATH) if _ENV_PATH.exists() else ".env",
         extra="ignore",
     )
 
