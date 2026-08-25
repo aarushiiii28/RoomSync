@@ -16,7 +16,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 
 const SIGNAL_COLORS: Record<string, string> = {
   sleep_compatibility: "#494F66",
-  work_compatibility: "#0284c7",
+  work_compatibility: "#3D2A62",
   cleanliness_compatibility: "#7c3aed",
   social_compatibility: "#D97870",
   privacy_compatibility: "#059669",
