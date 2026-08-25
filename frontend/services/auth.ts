@@ -21,6 +21,13 @@ export interface CurrentUser {
   is_email_verified?: boolean;
 }
 
+export async function checkUsernameAvailability(username: string): Promise<{ available: boolean; message: string }> {
+  const response = await api.get<{ available: boolean; message: string }>("/auth/check-username", {
+    params: { username },
+  });
+  return response.data;
+}
+
 export async function register(data: RegisterData) {
   const response = await api.post("/auth/register", data);
   return response.data;

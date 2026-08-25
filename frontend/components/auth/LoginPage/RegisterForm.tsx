@@ -11,7 +11,7 @@ import PrimaryButton from "../shared/PrimaryButton";
 import Divider from "../shared/Divider";
 import SocialLogin from "./SocialLogin";
 
-import { register } from "@/services/auth";
+import { checkUsernameAvailability, register } from "@/services/auth";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -26,8 +26,25 @@ export default function RegisterForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  async function handleUsernameBlur() {
+    const clean = username.trim();
+    if (clean.length >= 3) {
+      try {
+        const res = await checkUsernameAvailability(clean);
+        if (!res.available) {
+          setUsernameStatus(res.message || "Username unavailable.");
+        } else {
+          setUsernameStatus(null);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -49,6 +66,11 @@ export default function RegisterForm() {
 
     if (username.trim().length < 5) {
       setError("Username must be at least 5 characters.");
+      return;
+    }
+
+    if (usernameStatus) {
+      setError(usernameStatus);
       return;
     }
 
@@ -129,15 +151,22 @@ export default function RegisterForm() {
         />
       </div>
 
-      <AuthInput
-        icon={<User size={16} />}
-        placeholder="Username"
-        value={username}
-        onChange={(e) =>
-          setUsername(e.target.value)
-        }
-        disabled={loading}
-      />
+      <div>
+        <AuthInput
+          icon={<User size={16} />}
+          placeholder="Username"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            if (usernameStatus) setUsernameStatus(null);
+          }}
+          onBlur={handleUsernameBlur}
+          disabled={loading}
+        />
+        {usernameStatus && (
+          <p className="text-[12px] text-red-400 mt-1 ml-1">{usernameStatus}</p>
+        )}
+      </div>
 
       <AuthInput
         type="email"

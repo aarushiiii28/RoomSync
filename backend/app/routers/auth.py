@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -29,6 +30,28 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
+
+
+@router.get(
+    "/check-username",
+    status_code=status.HTTP_200_OK,
+)
+def check_username(
+    username: str,
+    db: Session = Depends(get_db),
+):
+    clean = username.strip()
+    if not clean:
+        return {"available": False, "message": "Username is required."}
+    exists = (
+        db.query(User)
+        .filter(func.lower(User.username) == clean.lower())
+        .first()
+        is not None
+    )
+    if exists:
+        return {"available": False, "message": "Username unavailable."}
+    return {"available": True, "message": "Username is available."}
 
 
 @router.post(

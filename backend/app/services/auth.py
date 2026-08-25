@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.refresh_token import RefreshToken
@@ -22,21 +23,26 @@ from app.services.email_verification import create_and_send_verification_otp
 
 def register_user(db: Session, user_data: UserRegister) -> User:
     """Register a new user."""
-    if db.query(User).filter(User.username == user_data.username).first():
-        raise ValueError("Username already exists.")
+    clean_username = user_data.username.strip()
+    if (
+        db.query(User)
+        .filter(func.lower(User.username) == clean_username.lower())
+        .first()
+    ):
+        raise ValueError("Username unavailable.")
 
     if (
         user_data.email
         and db.query(User)
-        .filter(User.email == user_data.email)
+        .filter(func.lower(User.email) == user_data.email.strip().lower())
         .first()
     ):
         raise ValueError("Email already exists.")
 
 
     new_user = User(
-        username=user_data.username,
-        email=user_data.email,
+        username=clean_username,
+        email=user_data.email.strip().lower() if user_data.email else None,
         password_hash=hash_password(user_data.password),
         email_verified=False,
     )
