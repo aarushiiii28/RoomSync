@@ -187,7 +187,7 @@ export default function MatchDetailPage() {
                         sizes="96px"
                       />
                     ) : (
-                      <span className="text-3xl font-bold font-serif" style={{ color: "#494F66" }}>
+                      <span className="text-3xl font-bold font-sans" style={{ color: "#494F66" }}>
                         {(candidate.first_name?.[0] ?? "?").toUpperCase()}
                       </span>
                     )}
@@ -195,7 +195,7 @@ export default function MatchDetailPage() {
 
                   {/* Name and Summary Info */}
                   <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight truncate">
+                    <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-tight truncate">
                       {displayName}
                     </h1>
 
@@ -325,7 +325,7 @@ export default function MatchDetailPage() {
                   }}
                 >
                   <div className="border-b pb-4" style={{ borderColor: "#EBD6CF" }}>
-                    <h2 className="font-serif text-xl font-bold" style={{ color: "#2D3246" }}>
+                    <h2 className="font-sans text-xl font-bold" style={{ color: "#2D3246" }}>
                       Compatibility Signals Breakdown
                     </h2>
                     <p className="text-[13px] mt-1 font-medium" style={{ color: "#494F66" }}>

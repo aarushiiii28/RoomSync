@@ -29,7 +29,7 @@ export default function DashboardPage() {
               style={{ background: "#494F66" }}
             >
               <div>
-                <h1 className="text-[22px] sm:text-[24px] font-bold tracking-tight text-white font-serif">
+                <h1 className="text-[22px] sm:text-[24px] font-bold tracking-tight text-white font-sans">
                   Welcome back, {firstName}!
                 </h1>
                 <p className="text-[13px] font-medium mt-1" style={{ color: "#A6ACBE" }}>

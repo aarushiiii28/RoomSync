@@ -175,7 +175,7 @@ export default function RecommendationsGrid({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2
-            className="font-serif text-[22px] font-normal tracking-tight"
+            className="font-sans text-[22px] font-bold tracking-tight"
             style={{ color: "#2D3246" }}
           >
             Your Matches
