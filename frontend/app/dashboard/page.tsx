@@ -30,7 +30,7 @@ export default function DashboardPage() {
                 Welcome back, {firstName}!
               </h1>
               <p className="text-[13px] sm:text-[14px] font-medium text-[#9ec4c9] mt-1.5">
-                Your profile is complete. Here are your AI-powered roommate matches.
+                Your profile is complete. Here are your roommate matches.
               </p>
             </div>
 

@@ -175,12 +175,7 @@ export default function RecommendationsGrid({
       {/* ── Section header ── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p
-            className="text-[11px] font-bold tracking-[0.25em] uppercase mb-1"
-            style={{ color: "#F8B4C8" }}
-          >
-            AI Powered
-          </p>
+
           <h2
             className="text-[22px] font-bold tracking-tight text-white"
           >
