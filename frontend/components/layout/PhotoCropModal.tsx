@@ -35,7 +35,7 @@ export default function PhotoCropModal({
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const viewportSize = 260; // 260px square crop viewport
+  const viewportSize = 210; // compact square crop viewport
 
   // Reset parameters when image changes or modal opens
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function PhotoCropModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSaving) {
           onClose();
@@ -148,29 +148,29 @@ export default function PhotoCropModal({
     >
       <div
         className="
-          relative w-full max-w-sm
+          relative w-full max-w-[280px]
           rounded-2xl
           bg-[#161a26]
           border border-white/15
-          p-5
+          p-4
           shadow-[0_20px_50px_rgba(0,0,0,0.9)]
           text-white
           animate-in zoom-in-95 duration-150
         "
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-[#F8B4C8]" />
-            <h3 className="text-[14px] font-bold text-white">Adjust & Crop Photo</h3>
+        <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-[#F8B4C8]" />
+            <h3 className="text-[13px] font-bold text-white">Crop Photo</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         </div>
 

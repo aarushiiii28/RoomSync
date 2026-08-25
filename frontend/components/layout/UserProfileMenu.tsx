@@ -12,7 +12,6 @@ import {
   LogOut,
   Pencil,
   Eye,
-  Crop,
   Camera,
   Upload,
   Trash2,
@@ -371,22 +370,23 @@ export default function UserProfileMenu() {
                 )}
               </div>
 
-              {/* Small Compact Photo Options Box (anchored right near the avatar) */}
+              {/* Small Compact Photo Options Box (moved to the left of the main menu) */}
               {photoMenuOpen && (
                 <div
                   onClick={(e) => e.stopPropagation()}
                   className="
                     absolute
-                    top-14
-                    left-0
-                    w-52
+                    top-0
+                    right-full
+                    mr-2
+                    w-48
                     rounded-xl
                     bg-[#1e2332]
                     border border-white/15
                     shadow-[0_12px_32px_rgba(0,0,0,0.85)]
                     p-1.5
                     z-50
-                    animate-in fade-in zoom-in-95
+                    animate-in fade-in slide-in-from-right-2
                     duration-150
                   "
                 >
@@ -406,7 +406,7 @@ export default function UserProfileMenu() {
                         </div>
                       ) : (
                         <>
-                          <div className="w-28 h-28 mx-auto rounded-full overflow-hidden border-2 border-[#F8B4C8] bg-black shadow-inner">
+                          <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-[#F8B4C8] bg-black shadow-inner">
                             <video
                               ref={videoRef}
                               autoPlay
@@ -419,7 +419,7 @@ export default function UserProfileMenu() {
                             <button
                               type="button"
                               onClick={handleSnapForCrop}
-                              className="px-3 py-1 rounded-lg bg-[#F8B4C8] text-[#161925] font-bold text-[11px] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                              className="px-2.5 py-1 rounded-lg bg-[#F8B4C8] text-[#161925] font-bold text-[11px] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
                             >
                               <Camera size={12} />
                               <span>Snap</span>
@@ -436,7 +436,7 @@ export default function UserProfileMenu() {
                       )}
                     </div>
                   ) : (
-                    /* Small clean action list */
+                    /* Small clean action list without Crop Photo */
                     <div className="space-y-0.5">
                       {/* Option: View Photo (if user has photo) */}
                       {user?.profilePhotoUrl && (
@@ -448,7 +448,7 @@ export default function UserProfileMenu() {
                           }}
                           className="
                             w-full flex items-center gap-2
-                            px-2.5 py-2
+                            px-2.5 py-1.5
                             rounded-lg
                             text-[12px] font-medium
                             text-zinc-200
@@ -462,38 +462,13 @@ export default function UserProfileMenu() {
                         </button>
                       )}
 
-                      {/* Option: Crop Current Photo (if user has photo) */}
-                      {user?.profilePhotoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPhotoMenuOpen(false);
-                            setCropImageSrc(user.profilePhotoUrl || null);
-                            setIsCropModalOpen(true);
-                          }}
-                          className="
-                            w-full flex items-center gap-2
-                            px-2.5 py-2
-                            rounded-lg
-                            text-[12px] font-medium
-                            text-zinc-200
-                            hover:bg-white/10 hover:text-white
-                            transition-colors
-                            cursor-pointer
-                          "
-                        >
-                          <Crop size={14} className="text-[#F8B4C8]" />
-                          <span>Crop Photo</span>
-                        </button>
-                      )}
-
                       {/* Option: Take Photo */}
                       <button
                         type="button"
                         onClick={startCamera}
                         className="
                           w-full flex items-center gap-2
-                          px-2.5 py-2
+                          px-2.5 py-1.5
                           rounded-lg
                           text-[12px] font-medium
                           text-zinc-200
@@ -512,7 +487,7 @@ export default function UserProfileMenu() {
                         onClick={() => fileInputRef.current?.click()}
                         className="
                           w-full flex items-center gap-2
-                          px-2.5 py-2
+                          px-2.5 py-1.5
                           rounded-lg
                           text-[12px] font-medium
                           text-zinc-200
@@ -533,7 +508,7 @@ export default function UserProfileMenu() {
                           disabled={isSavingPhoto}
                           className="
                             w-full flex items-center gap-2
-                            px-2.5 py-2
+                            px-2.5 py-1.5
                             rounded-lg
                             text-[12px] font-medium
                             text-red-400

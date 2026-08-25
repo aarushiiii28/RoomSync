@@ -34,7 +34,7 @@ export default function PhotoViewerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -43,48 +43,44 @@ export default function PhotoViewerModal({
     >
       <div
         className="
-          relative w-full max-w-sm
-          rounded-3xl
+          relative w-full max-w-[260px]
+          rounded-2xl
           bg-[#131722]/95
           border border-white/15
-          p-6
-          shadow-[0_24px_64px_rgba(0,0,0,0.9)]
+          p-3.5
+          shadow-[0_16px_40px_rgba(0,0,0,0.85)]
           text-white
+          backdrop-blur-xl
           animate-in zoom-in-95 duration-150
         "
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#F8B4C8]/15 border border-[#F8B4C8]/30 flex items-center justify-center text-[#F8B4C8]">
-              <Sparkles size={14} />
-            </div>
-            <div>
-              <h3 className="text-[14px] font-bold text-white leading-tight">
-                Profile Photo
-              </h3>
-              <p className="text-[11px] text-zinc-400">{displayName}</p>
-            </div>
+        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="flex items-center gap-1.5 min-w-0 pr-2">
+            <Sparkles size={13} className="text-[#F8B4C8] shrink-0" />
+            <h3 className="text-[12px] font-bold text-white truncate">
+              {displayName}
+            </h3>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
           >
-            <X size={15} />
+            <X size={13} />
           </button>
         </div>
 
-        {/* Large Avatar Photo Preview */}
-        <div className="py-6 flex flex-col items-center justify-center">
+        {/* Compact Avatar Photo Preview */}
+        <div className="py-2.5 flex flex-col items-center justify-center">
           <div
             className="
-              w-56 h-56
+              w-32 h-32
               rounded-full
               overflow-hidden
-              border-4 border-[#F8B4C8]
-              shadow-[0_0_32px_rgba(248,180,200,0.35)]
+              border-3 border-[#F8B4C8]
+              shadow-[0_0_20px_rgba(248,180,200,0.25)]
               bg-[#161925]
               flex items-center justify-center
             "
@@ -96,7 +92,7 @@ export default function PhotoViewerModal({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[#F8B4C8] font-bold text-5xl select-none">
+              <span className="text-[#F8B4C8] font-bold text-3xl select-none">
                 {initials}
               </span>
             )}
@@ -104,7 +100,7 @@ export default function PhotoViewerModal({
         </div>
 
         {/* Action Toolbar */}
-        <div className="flex items-center justify-center gap-2 pt-3 border-t border-white/10">
+        <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
           {photoUrl && (
             <button
               type="button"
@@ -113,17 +109,17 @@ export default function PhotoViewerModal({
                 onEditCrop();
               }}
               className="
-                flex-1 flex items-center justify-center gap-1.5
-                px-3 py-2
-                rounded-xl
+                flex-1 flex items-center justify-center gap-1
+                px-2 py-1.5
+                rounded-lg
                 bg-white/5 hover:bg-white/10
                 border border-white/10 hover:border-white/20
-                text-[12px] font-medium
+                text-[11px] font-medium
                 text-zinc-200 hover:text-white
                 transition cursor-pointer
               "
             >
-              <Crop size={14} className="text-[#F8B4C8]" />
+              <Crop size={12} className="text-[#F8B4C8]" />
               <span>Crop</span>
             </button>
           )}
@@ -135,17 +131,17 @@ export default function PhotoViewerModal({
               onChangePhoto();
             }}
             className="
-              flex-1 flex items-center justify-center gap-1.5
-              px-3 py-2
-              rounded-xl
+              flex-1 flex items-center justify-center gap-1
+              px-2 py-1.5
+              rounded-lg
               bg-[#F8B4C8] hover:opacity-95
               text-[#161925] font-bold
-              text-[12px]
-              shadow-sm
+              text-[11px]
+              shadow-xs
               transition cursor-pointer
             "
           >
-            <Camera size={14} />
+            <Camera size={12} />
             <span>Change</span>
           </button>
 
@@ -158,15 +154,15 @@ export default function PhotoViewerModal({
               }}
               title="Remove Photo"
               className="
-                p-2
-                rounded-xl
+                p-1.5
+                rounded-lg
                 bg-red-500/10 hover:bg-red-500/20
                 border border-red-500/20 hover:border-red-500/30
                 text-red-400 hover:text-red-300
                 transition cursor-pointer
               "
             >
-              <Trash2 size={15} />
+              <Trash2 size={12} />
             </button>
           )}
         </div>
