@@ -35,6 +35,7 @@ export interface CandidateMatchItem {
   age: number | null;
   gender: string | null;
   occupation: string | null;
+  bio?: string | null;
   city: string | null;
   profile_photo_url: string | null;
   prediction: "High" | "Medium" | "Low";

@@ -168,6 +168,7 @@ def get_recommendations(
             "age": s_dict.get("age"),
             "gender": prof.gender.value if (prof and prof.gender) else None,
             "occupation": prof.occupation if prof else None,
+            "bio": prof.bio if prof else None,
             "city": loc.city if loc else None,
             "profile_photo_url": prof.profile_photo_url if prof else None,
         }
@@ -193,6 +194,7 @@ def get_recommendations(
             age=meta.get("age"),
             gender=meta.get("gender"),
             occupation=meta.get("occupation"),
+            bio=meta.get("bio"),
             city=meta.get("city"),
             profile_photo_url=meta.get("profile_photo_url"),
             prediction=item["prediction"],

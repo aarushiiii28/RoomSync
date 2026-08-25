@@ -61,6 +61,7 @@ class CandidateMatchItem(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
     occupation: Optional[str] = None
+    bio: Optional[str] = None
     city: Optional[str] = None
     profile_photo_url: Optional[str] = None
     prediction: str

@@ -264,6 +264,30 @@ export default function MatchDetailPage() {
                   </p>
                 </div>
 
+                {/* About Section if provided */}
+                {candidate.bio && candidate.bio.trim().length > 0 && (
+                  <div
+                    className="p-6 sm:p-7 rounded-2xl shadow-xs space-y-2"
+                    style={{
+                      background: "#ffffff",
+                      border: "1.5px solid #EBD6CF",
+                    }}
+                  >
+                    <h2
+                      className="font-sans text-[16px] font-bold"
+                      style={{ color: "#2D3246" }}
+                    >
+                      About
+                    </h2>
+                    <p
+                      className="text-[14px] leading-relaxed font-normal whitespace-pre-line"
+                      style={{ color: "#494F66" }}
+                    >
+                      {candidate.bio}
+                    </p>
+                  </div>
+                )}
+
                 {/* Sub-dimensional Compatibility Signals */}
                 <div
                   className="p-6 sm:p-8 rounded-2xl shadow-sm space-y-5"
