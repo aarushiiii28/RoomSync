@@ -121,7 +121,7 @@ def get_recommendations(
 
     target_student, _ = build_student_from_user(current_user)
 
-    # Determine current user's gender and roommate gender preference
+    # Determine current user's gender, roommate gender preference, and accommodation type
     current_prof = current_user.profile
     current_user_gender: Optional[str] = (
         current_prof.gender.value if (current_prof and current_prof.gender) else None
@@ -131,6 +131,13 @@ def get_recommendations(
     current_preferred_gender: Optional[str] = (
         current_pref.preferred_gender.value
         if (current_pref and current_pref.preferred_gender and current_pref.preferred_gender.value != "any")
+        else None
+    )
+
+    current_acc = current_user.accommodation_preference
+    current_accommodation_type: Optional[str] = (
+        current_acc.accommodation_type.value
+        if (current_acc and current_acc.accommodation_type)
         else None
     )
 
@@ -153,9 +160,15 @@ def get_recommendations(
         prof = user.profile
         loc = user.location
         cand_pref = user.roommate_preference
+        cand_acc = user.accommodation_preference
 
-        # Candidate's gender
+        # Candidate's gender & accommodation type
         candidate_gender = prof.gender.value if (prof and prof.gender) else None
+        candidate_accommodation_type = (
+            cand_acc.accommodation_type.value
+            if (cand_acc and cand_acc.accommodation_type)
+            else None
+        )
 
         # Candidate's preferred gender for roommates
         candidate_preferred_gender = (
@@ -164,15 +177,21 @@ def get_recommendations(
             else None
         )
 
-        # ── Bidirectional Hard Gender Filter ────────────────────────────────
-        # 1. If current user has a strict gender preference (not "any"),
-        #    skip candidates whose gender doesn't match current user's preference.
+        # ── 1. Bidirectional Accommodation Type Filter ──────────────────────
+        # If accommodation type differs, do not show matches on both sides.
+        if current_accommodation_type is not None or candidate_accommodation_type is not None:
+            if current_accommodation_type != candidate_accommodation_type:
+                continue
+
+        # ── 2. Bidirectional Hard Gender Filter ─────────────────────────────
+        # If current user has a strict gender preference (female / male / non_binary),
+        # candidate's gender must match.
         if current_preferred_gender is not None:
             if candidate_gender != current_preferred_gender:
                 continue
 
-        # 2. If candidate user has a strict gender preference (not "any"),
-        #    skip candidates if current user's gender doesn't match candidate's preference (vice versa).
+        # If candidate has a strict gender preference (female / male / non_binary),
+        # current user's gender must match (vice versa).
         if candidate_preferred_gender is not None:
             if current_user_gender != candidate_preferred_gender:
                 continue

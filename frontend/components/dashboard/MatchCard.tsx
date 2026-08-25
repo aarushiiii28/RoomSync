@@ -41,10 +41,13 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
     [candidate.first_name, candidate.last_name].filter(Boolean).join(" ") ||
     "Unknown";
 
-  // Only age and place of living shown in the primary row
+  // Age, place of living, and gender shown in the primary row
   const ageAndLocation = [
     candidate.age ? `${candidate.age} yrs` : null,
     candidate.city ? candidate.city : null,
+    candidate.gender
+      ? candidate.gender.charAt(0).toUpperCase() + candidate.gender.slice(1).replace("_", "-")
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");
