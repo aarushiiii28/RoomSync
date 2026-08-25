@@ -121,11 +121,16 @@ def get_recommendations(
 
     target_student, _ = build_student_from_user(current_user)
 
-    # Determine current user's gender preference (hard filter)
-    pref = current_user.roommate_preference
-    preferred_gender: Optional[str] = (
-        pref.preferred_gender.value
-        if (pref and pref.preferred_gender and pref.preferred_gender.value != "any")
+    # Determine current user's gender and roommate gender preference
+    current_prof = current_user.profile
+    current_user_gender: Optional[str] = (
+        current_prof.gender.value if (current_prof and current_prof.gender) else None
+    )
+
+    current_pref = current_user.roommate_preference
+    current_preferred_gender: Optional[str] = (
+        current_pref.preferred_gender.value
+        if (current_pref and current_pref.preferred_gender and current_pref.preferred_gender.value != "any")
         else None
     )
 
@@ -147,13 +152,29 @@ def get_recommendations(
     for user in candidate_users:
         prof = user.profile
         loc = user.location
+        cand_pref = user.roommate_preference
 
-        # ── Hard gender filter ──────────────────────────────────────────────
-        # If the current user has a strict gender preference (not "any"),
-        # skip candidates whose gender doesn't match.
-        if preferred_gender is not None:
-            candidate_gender = prof.gender.value if (prof and prof.gender) else None
-            if candidate_gender != preferred_gender:
+        # Candidate's gender
+        candidate_gender = prof.gender.value if (prof and prof.gender) else None
+
+        # Candidate's preferred gender for roommates
+        candidate_preferred_gender = (
+            cand_pref.preferred_gender.value
+            if (cand_pref and cand_pref.preferred_gender and cand_pref.preferred_gender.value != "any")
+            else None
+        )
+
+        # ── Bidirectional Hard Gender Filter ────────────────────────────────
+        # 1. If current user has a strict gender preference (not "any"),
+        #    skip candidates whose gender doesn't match current user's preference.
+        if current_preferred_gender is not None:
+            if candidate_gender != current_preferred_gender:
+                continue
+
+        # 2. If candidate user has a strict gender preference (not "any"),
+        #    skip candidates if current user's gender doesn't match candidate's preference (vice versa).
+        if candidate_preferred_gender is not None:
+            if current_user_gender != candidate_preferred_gender:
                 continue
         # ────────────────────────────────────────────────────────────────────
 
