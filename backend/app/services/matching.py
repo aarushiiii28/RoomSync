@@ -121,6 +121,14 @@ def get_recommendations(
 
     target_student, _ = build_student_from_user(current_user)
 
+    # Determine current user's gender preference (hard filter)
+    pref = current_user.roommate_preference
+    preferred_gender: Optional[str] = (
+        pref.preferred_gender.value
+        if (pref and pref.preferred_gender and pref.preferred_gender.value != "any")
+        else None
+    )
+
     # Query active candidate users who have completed lifestyle onboarding
     candidate_users = (
         db.query(User)
@@ -137,13 +145,23 @@ def get_recommendations(
     user_metadata: Dict[str, Dict[str, Any]] = {}
 
     for user in candidate_users:
+        prof = user.profile
+        loc = user.location
+
+        # ── Hard gender filter ──────────────────────────────────────────────
+        # If the current user has a strict gender preference (not "any"),
+        # skip candidates whose gender doesn't match.
+        if preferred_gender is not None:
+            candidate_gender = prof.gender.value if (prof and prof.gender) else None
+            if candidate_gender != preferred_gender:
+                continue
+        # ────────────────────────────────────────────────────────────────────
+
         s_dict, _ = build_student_from_user(user)
         user_id_str = str(user.id)
         s_dict["student_id"] = user_id_str
 
         # Capture public display info
-        prof = user.profile
-        loc = user.location
         user_metadata[user_id_str] = {
             "first_name": prof.first_name if prof else None,
             "last_name": prof.last_name if prof else None,

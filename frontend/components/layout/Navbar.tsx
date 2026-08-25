@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import UserProfileMenu from "@/components/layout/UserProfileMenu";
 
 const navItems = [
   { name: "Home", href: "/", isAnchor: false },
@@ -101,81 +102,86 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Right Buttons */}
+        {/* Right Buttons & Profile Menu */}
         <div className="flex flex-1 justify-end items-center gap-3">
           {!loading && isAuthenticated ? (
-            profileComplete ? (
-              /* Authenticated + Profile Complete */
-              <Link
-                href="/dashboard"
-                className="
-                  h-9
-                  px-5
-                  rounded-xl
-                  border
-                  border-white/15
-                  text-white
-                  text-[13px]
-                  font-medium
-                  whitespace-nowrap
-                  transition
-                  duration-200
-                  hover:bg-white/10
-                  flex
-                  items-center
-                "
-              >
-                Dashboard
-              </Link>
-            ) : (
-              /* Authenticated + Incomplete Profile */
-              <>
+            <>
+              {profileComplete ? (
+                /* Authenticated + Profile Complete */
                 <Link
-                  href="/onboarding?notice=complete_first"
+                  href="/dashboard"
                   className="
                     h-9
-                    px-4
-                    rounded-xl
+                    px-5
+                    rounded-[4px]
                     border
-                    border-white/10
-                    text-zinc-400
+                    border-white/15
+                    text-white
                     text-[13px]
                     font-medium
                     whitespace-nowrap
                     transition
                     duration-200
-                    hover:bg-white/5
-                    hover:text-zinc-200
+                    hover:bg-white/10
                     flex
                     items-center
                   "
                 >
                   Dashboard
                 </Link>
+              ) : (
+                /* Authenticated + Incomplete Profile */
+                <>
+                  <Link
+                    href="/onboarding?notice=complete_first"
+                    className="
+                      h-9
+                      px-4
+                      rounded-[4px]
+                      border
+                      border-white/10
+                      text-zinc-400
+                      text-[13px]
+                      font-medium
+                      whitespace-nowrap
+                      transition
+                      duration-200
+                      hover:bg-white/5
+                      hover:text-zinc-200
+                      flex
+                      items-center
+                    "
+                  >
+                    Dashboard
+                  </Link>
 
-                <Link
-                  href="/onboarding"
-                  className="
-                    h-9
-                    px-5
-                    rounded-xl
-                    font-bold
-                    text-[13px]
-                    text-[#161925]
-                    whitespace-nowrap
-                    bg-[#F8B4C8]
-                    transition
-                    duration-200
-                    hover:opacity-95
-                    hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
-                    flex
-                    items-center
-                  "
-                >
-                  Complete Profile
-                </Link>
-              </>
-            )
+                  <Link
+                    href="/onboarding"
+                    className="
+                      h-9
+                      px-5
+                      rounded-[4px]
+                      font-bold
+                      text-[13px]
+                      text-[#161925]
+                      whitespace-nowrap
+                      bg-[#F8B4C8]
+                      transition
+                      duration-200
+                      hover:opacity-95
+                      hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
+                      flex
+                      items-center
+                    "
+                  >
+                    Complete Profile
+                  </Link>
+                </>
+              )}
+
+              {/* Avatar menu at the rightmost corner */}
+              <UserProfileMenu />
+            </>
           ) : (
             /* Unauthenticated */
             <>
@@ -184,7 +190,7 @@ export default function Navbar() {
                 className="
                   h-9
                   px-5
-                  rounded-xl
+                  rounded-[4px]
                   border
                   border-white/15
                   text-white
@@ -206,7 +212,7 @@ export default function Navbar() {
                 className="
                   h-9
                   px-5
-                  rounded-xl
+                  rounded-[4px]
                   font-bold
                   text-[13px]
                   text-[#161925]

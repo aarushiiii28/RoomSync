@@ -1,7 +1,6 @@
 import "./globals.css";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
-import UserProfileMenu from "@/components/layout/UserProfileMenu";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,7 +30,6 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
-          <UserProfileMenu />
         </AuthProvider>
       </body>
     </html>

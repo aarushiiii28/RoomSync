@@ -161,7 +161,7 @@ export default function StepPreferences({
               <FormField label="Min Age" error={errors.min_age}>
                 <TextInput
                   type="number"
-                  min={13}
+                  min={18}
                   max={100}
                   value={data.min_age}
                   onChange={(e) =>

@@ -455,8 +455,8 @@ export default function OnboardingWizard() {
     } else if (step === 5) {
       const minAge = Number(formData.preferences.min_age);
       const maxAge = Number(formData.preferences.max_age);
-      if (isNaN(minAge) || minAge < 13) {
-        errors.min_age = "Min age must be at least 13.";
+      if (isNaN(minAge) || minAge < 18) {
+        errors.min_age = "Min age must be at least 18.";
       }
       if (isNaN(maxAge) || maxAge > 100) {
         errors.max_age = "Max age must be 100 or less.";

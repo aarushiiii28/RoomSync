@@ -74,24 +74,57 @@ export default function UserProfileMenu() {
   };
 
   return (
-    <div ref={menuRef} className="fixed bottom-6 left-6 z-50 select-none">
-      {/* Popover Dropdown Menu */}
+    <div ref={menuRef} className="relative select-none">
+      {/* Profile Avatar Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-label="User Profile Menu"
+        aria-expanded={isOpen}
+        className="
+          w-9
+          h-9
+          rounded-full
+          bg-[#161925]
+          border border-white/25
+          text-white
+          flex items-center justify-center
+          font-bold
+          text-[12px]
+          shadow-md
+          hover:border-[#F8B4C8]/80
+          hover:shadow-[0_0_16px_rgba(248,180,200,0.35)]
+          hover:scale-105
+          active:scale-95
+          transition-all
+          duration-150
+          cursor-pointer
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#F8B4C8]/50
+        "
+      >
+        {initials}
+      </button>
+
+      {/* Popover Dropdown Menu (Opens downwards) */}
       {isOpen && (
         <div
           role="menu"
           className="
             absolute
-            bottom-13
-            left-0
+            top-11
+            right-0
             w-64
             rounded-2xl
             bg-[#161925]/95
             border border-white/10
-            shadow-[0_12px_40px_rgba(0,0,0,0.6)]
+            shadow-[0_16px_48px_rgba(0,0,0,0.7)]
             p-3
             backdrop-blur-xl
-            animate-in fade-in slide-in-from-bottom-2
+            animate-in fade-in slide-in-from-top-2
             duration-150
+            z-50
           "
         >
           {/* User Info Header */}
@@ -100,23 +133,10 @@ export default function UserProfileMenu() {
               {initials}
             </div>
 
-            <div className="overflow-hidden">
+            <div className="overflow-hidden min-w-0 flex-1">
               <p className="text-[14px] font-semibold text-white truncate">
                 {displayName}
               </p>
-              <div className="mt-0.5">
-                {profileComplete ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    Profile Complete
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    Incomplete Profile
-                  </span>
-                )}
-              </div>
             </div>
           </div>
 
@@ -209,38 +229,6 @@ export default function UserProfileMenu() {
           </div>
         </div>
       )}
-
-      {/* Floating Bottom-Left Profile Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="User Profile Menu"
-        aria-expanded={isOpen}
-        className="
-          w-10
-          h-10
-          rounded-full
-          bg-[#161925]
-          border border-white/20
-          text-white
-          flex items-center justify-center
-          font-bold
-          text-[13px]
-          shadow-[0_4px_20px_rgba(0,0,0,0.5)]
-          hover:border-[#F8B4C8]/80
-          hover:shadow-[0_0_20px_rgba(248,180,200,0.4)]
-          hover:scale-105
-          active:scale-95
-          transition-all
-          duration-200
-          cursor-pointer
-          focus:outline-none
-          focus:ring-2
-          focus:ring-[#F8B4C8]/50
-        "
-      >
-        {initials}
-      </button>
     </div>
   );
 }
