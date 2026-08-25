@@ -216,6 +216,13 @@ export default function MatchDetailPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* About line placed directly under info without heading */}
+                    {candidate.bio && candidate.bio.trim().length > 0 && (
+                      <p className="mt-3 text-[13.5px] sm:text-[14px] text-[#F8ECE8]/90 font-normal leading-relaxed max-w-2xl">
+                        {candidate.bio}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -263,30 +270,6 @@ export default function MatchDetailPage() {
                     </span>
                   </p>
                 </div>
-
-                {/* About Section if provided */}
-                {candidate.bio && candidate.bio.trim().length > 0 && (
-                  <div
-                    className="p-6 sm:p-7 rounded-2xl shadow-xs space-y-2"
-                    style={{
-                      background: "#ffffff",
-                      border: "1.5px solid #EBD6CF",
-                    }}
-                  >
-                    <h2
-                      className="font-sans text-[16px] font-bold"
-                      style={{ color: "#2D3246" }}
-                    >
-                      About
-                    </h2>
-                    <p
-                      className="text-[14px] leading-relaxed font-normal whitespace-pre-line"
-                      style={{ color: "#494F66" }}
-                    >
-                      {candidate.bio}
-                    </p>
-                  </div>
-                )}
 
                 {/* Sub-dimensional Compatibility Signals */}
                 <div
