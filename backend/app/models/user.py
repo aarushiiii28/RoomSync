@@ -42,7 +42,12 @@ class User(Base):
     nullable=True,
     )
     
-
+    email_verified: Mapped[bool] = mapped_column(
+    Boolean,
+    nullable=False,
+    default=False,
+    server_default="false",
+    )
 
     password_hash: Mapped[str] = mapped_column(
         Text,
@@ -119,4 +124,4 @@ class User(Base):
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",
-    )
+    )

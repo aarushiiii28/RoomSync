@@ -29,3 +29,16 @@ body {
     font-family: Inter, sans-serif;
     min-height: 100vh;
 }
+
+/* Hide Next.js Dev Overlay / Issue Indicator Badge */
+nextjs-portal,
+#nextjs-dev-overlay,
+[data-nextjs-dev-overlay],
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+[data-nextjs-route-announcer] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
