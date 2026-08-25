@@ -298,6 +298,7 @@ export default function UserProfileMenu() {
                   type="button"
                   onClick={() => {
                     if (user?.profilePhotoUrl) {
+                      setIsOpen(false);
                       setIsViewerOpen(true);
                     } else {
                       setPhotoMenuOpen((prev) => !prev);
@@ -444,6 +445,7 @@ export default function UserProfileMenu() {
                           type="button"
                           onClick={() => {
                             setPhotoMenuOpen(false);
+                            setIsOpen(false);
                             setIsViewerOpen(true);
                           }}
                           className="

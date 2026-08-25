@@ -34,7 +34,7 @@ export default function PhotoViewerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[90] flex items-start justify-end pt-28 pr-6 sm:pr-12 md:pr-20 lg:pr-28 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -45,17 +45,17 @@ export default function PhotoViewerModal({
         className="
           relative w-full max-w-[260px]
           rounded-2xl
-          bg-[#131722]/95
+          bg-[#131722]/98
           border border-white/15
-          p-3.5
-          shadow-[0_16px_40px_rgba(0,0,0,0.85)]
+          p-4
+          shadow-[0_20px_50px_rgba(0,0,0,0.9)]
           text-white
           backdrop-blur-xl
-          animate-in zoom-in-95 duration-150
+          animate-in zoom-in-95 slide-in-from-top-2 duration-150
         "
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
           <div className="flex items-center gap-1.5 min-w-0 pr-2">
             <Sparkles size={13} className="text-[#F8B4C8] shrink-0" />
             <h3 className="text-[12px] font-bold text-white truncate">
@@ -73,14 +73,14 @@ export default function PhotoViewerModal({
         </div>
 
         {/* Compact Avatar Photo Preview */}
-        <div className="py-2.5 flex flex-col items-center justify-center">
+        <div className="py-3 flex flex-col items-center justify-center">
           <div
             className="
-              w-32 h-32
+              w-36 h-36
               rounded-full
               overflow-hidden
               border-3 border-[#F8B4C8]
-              shadow-[0_0_20px_rgba(248,180,200,0.25)]
+              shadow-[0_0_24px_rgba(248,180,200,0.25)]
               bg-[#161925]
               flex items-center justify-center
             "
@@ -92,7 +92,7 @@ export default function PhotoViewerModal({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[#F8B4C8] font-bold text-3xl select-none">
+              <span className="text-[#F8B4C8] font-bold text-4xl select-none">
                 {initials}
               </span>
             )}
@@ -100,7 +100,7 @@ export default function PhotoViewerModal({
         </div>
 
         {/* Action Toolbar */}
-        <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
+        <div className="flex items-center justify-center gap-1.5 pt-2.5 border-t border-white/10">
           {photoUrl && (
             <button
               type="button"
@@ -110,7 +110,7 @@ export default function PhotoViewerModal({
               }}
               className="
                 flex-1 flex items-center justify-center gap-1
-                px-2 py-1.5
+                px-2.5 py-1.5
                 rounded-lg
                 bg-white/5 hover:bg-white/10
                 border border-white/10 hover:border-white/20
@@ -132,7 +132,7 @@ export default function PhotoViewerModal({
             }}
             className="
               flex-1 flex items-center justify-center gap-1
-              px-2 py-1.5
+              px-2.5 py-1.5
               rounded-lg
               bg-[#F8B4C8] hover:opacity-95
               text-[#161925] font-bold
@@ -162,7 +162,7 @@ export default function PhotoViewerModal({
                 transition cursor-pointer
               "
             >
-              <Trash2 size={12} />
+              <Trash2 size={13} />
             </button>
           )}
         </div>
