@@ -12,25 +12,27 @@ import {
   LogOut,
   Pencil,
   Eye,
+  Crop,
   Camera,
   Upload,
   Trash2,
   Loader2,
+  ArrowLeft,
+  X,
 } from "lucide-react";
 import PhotoCropModal from "./PhotoCropModal";
-import PhotoViewerModal from "./PhotoViewerModal";
 
 export default function UserProfileMenu() {
   const router = useRouter();
   const { isAuthenticated, profileComplete, user, loading, updateProfilePhoto } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [menuView, setMenuView] = useState<"default" | "view_photo">("default");
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
 
-  // Modals state
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  // Crop Modal state
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ export default function UserProfileMenu() {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setPhotoMenuOpen(false);
+        setMenuView("default");
         stopCamera();
       }
     }
@@ -68,6 +71,8 @@ export default function UserProfileMenu() {
           stopCamera();
         } else if (photoMenuOpen) {
           setPhotoMenuOpen(false);
+        } else if (menuView === "view_photo") {
+          setMenuView("default");
         } else {
           setIsOpen(false);
         }
@@ -83,7 +88,7 @@ export default function UserProfileMenu() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, photoMenuOpen, cameraActive, stopCamera]);
+  }, [isOpen, photoMenuOpen, cameraActive, menuView, stopCamera]);
 
   // Clean up camera on unmount
   useEffect(() => {
@@ -115,6 +120,7 @@ export default function UserProfileMenu() {
   const handleLogout = async () => {
     setIsOpen(false);
     setPhotoMenuOpen(false);
+    setMenuView("default");
     stopCamera();
     try {
       await logout();
@@ -157,7 +163,6 @@ export default function UserProfileMenu() {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      // Mirror snapshot to match selfie expectation
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -209,6 +214,7 @@ export default function UserProfileMenu() {
     try {
       await updateProfilePhoto(null);
       setPhotoMenuOpen(false);
+      setMenuView("default");
     } finally {
       setIsSavingPhoto(false);
     }
@@ -232,6 +238,7 @@ export default function UserProfileMenu() {
           onClick={() => {
             setIsOpen((prev) => !prev);
             setPhotoMenuOpen(false);
+            setMenuView("default");
             stopCamera();
           }}
           aria-label="User Profile Menu"
@@ -281,366 +288,461 @@ export default function UserProfileMenu() {
               right-0
               w-64
               rounded-2xl
-              bg-[#161925]/95
-              border border-white/10
-              shadow-[0_16px_48px_rgba(0,0,0,0.7)]
+              bg-[#161925]/98
+              border border-white/15
+              shadow-[0_16px_48px_rgba(0,0,0,0.8)]
               p-3
-              backdrop-blur-xl
               animate-in fade-in slide-in-from-top-2
               duration-150
               z-50
             "
           >
-            {/* User Info Header with Avatar & Edit Pencil */}
-            <div className="p-2 flex items-center gap-3 relative">
-              <div className="relative group/avatar flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (user?.profilePhotoUrl) {
+            {menuView === "view_photo" ? (
+              /* ── Embedded Photo Viewer View ── */
+              <div className="space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setMenuView("default")}
+                    className="flex items-center gap-1 text-[12px] font-medium text-zinc-300 hover:text-white transition cursor-pointer"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Back</span>
+                  </button>
+
+                  <span className="text-[12px] font-bold text-white">Profile Photo</span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
                       setIsOpen(false);
-                      setIsViewerOpen(true);
-                    } else {
-                      setPhotoMenuOpen((prev) => !prev);
-                    }
-                  }}
-                  title={user?.profilePhotoUrl ? "View profile photo" : "Add profile picture"}
-                  className="
-                    w-11 h-11
-                    rounded-full
-                    bg-[#F8B4C8]
-                    text-[#161925]
-                    flex items-center justify-center
-                    font-bold text-sm
-                    shadow-md
-                    overflow-hidden
-                    border border-white/15
-                    hover:ring-2 hover:ring-[#F8B4C8]
-                    transition-all duration-150
-                    cursor-pointer
-                  "
-                >
-                  {user?.profilePhotoUrl ? (
-                    <img
-                      src={user.profilePhotoUrl}
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    initials
+                      setMenuView("default");
+                    }}
+                    className="w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+
+                {/* Photo Display */}
+                <div className="py-2 flex flex-col items-center justify-center">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-3 border-[#F8B4C8] shadow-[0_0_20px_rgba(248,180,200,0.3)] bg-[#161925] flex items-center justify-center">
+                    {user?.profilePhotoUrl ? (
+                      <img
+                        src={user.profilePhotoUrl}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[#F8B4C8] font-bold text-3xl select-none">
+                        {initials}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Toolbar */}
+                <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
+                  {user?.profilePhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCropImageSrc(user.profilePhotoUrl || null);
+                        setIsCropModalOpen(true);
+                      }}
+                      className="
+                        flex-1 flex items-center justify-center gap-1
+                        px-2.5 py-1.5
+                        rounded-lg
+                        bg-white/5 hover:bg-white/10
+                        border border-white/10 hover:border-white/20
+                        text-[11px] font-medium
+                        text-zinc-200 hover:text-white
+                        transition cursor-pointer
+                      "
+                    >
+                      <Crop size={12} className="text-[#F8B4C8]" />
+                      <span>Crop</span>
+                    </button>
                   )}
-                </button>
 
-                {/* Edit Pencil Icon Badge */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPhotoMenuOpen((prev) => !prev);
-                  }}
-                  title="Photo options"
-                  aria-label="Photo options"
-                  className="
-                    absolute -bottom-1 -right-1
-                    w-5 h-5
-                    rounded-full
-                    bg-[#161925]
-                    border border-white/20
-                    text-[#F8B4C8]
-                    hover:text-white
-                    hover:bg-[#F8B4C8]/40
-                    hover:scale-110
-                    flex items-center justify-center
-                    shadow-md
-                    transition-all duration-150
-                    cursor-pointer
-                  "
-                >
-                  <Pencil size={10} />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuView("default");
+                      setPhotoMenuOpen(true);
+                    }}
+                    className="
+                      flex-1 flex items-center justify-center gap-1
+                      px-2.5 py-1.5
+                      rounded-lg
+                      bg-[#F8B4C8] hover:opacity-95
+                      text-[#161925] font-bold
+                      text-[11px]
+                      shadow-xs
+                      transition cursor-pointer
+                    "
+                  >
+                    <Camera size={12} />
+                    <span>Change</span>
+                  </button>
+
+                  {user?.profilePhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={isSavingPhoto}
+                      title="Remove Photo"
+                      className="
+                        p-1.5
+                        rounded-lg
+                        bg-red-500/10 hover:bg-red-500/20
+                        border border-red-500/20 hover:border-red-500/30
+                        text-red-400 hover:text-red-300
+                        transition cursor-pointer
+                      "
+                    >
+                      {isSavingPhoto ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={12} />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
+            ) : (
+              /* ── Default User Menu ── */
+              <>
+                {/* User Info Header with Avatar & Edit Pencil */}
+                <div className="p-2 flex items-center gap-3 relative">
+                  <div className="relative group/avatar flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (user?.profilePhotoUrl) {
+                          setMenuView("view_photo");
+                        } else {
+                          setPhotoMenuOpen((prev) => !prev);
+                        }
+                      }}
+                      title={user?.profilePhotoUrl ? "View profile photo" : "Add profile picture"}
+                      className="
+                        w-11 h-11
+                        rounded-full
+                        bg-[#F8B4C8]
+                        text-[#161925]
+                        flex items-center justify-center
+                        font-bold text-sm
+                        shadow-md
+                        overflow-hidden
+                        border border-white/15
+                        hover:ring-2 hover:ring-[#F8B4C8]
+                        transition-all duration-150
+                        cursor-pointer
+                      "
+                    >
+                      {user?.profilePhotoUrl ? (
+                        <img
+                          src={user.profilePhotoUrl}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        initials
+                      )}
+                    </button>
 
-              <div className="overflow-hidden min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-white truncate">
-                  {displayName}
-                </p>
-                {user?.email && (
-                  <p className="text-[11px] text-zinc-400 truncate">
-                    {user.email}
-                  </p>
-                )}
-              </div>
+                    {/* Edit Pencil Icon Badge */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhotoMenuOpen((prev) => !prev);
+                      }}
+                      title="Photo options"
+                      aria-label="Photo options"
+                      className="
+                        absolute -bottom-1 -right-1
+                        w-5 h-5
+                        rounded-full
+                        bg-[#161925]
+                        border border-white/20
+                        text-[#F8B4C8]
+                        hover:text-white
+                        hover:bg-[#F8B4C8]/40
+                        hover:scale-110
+                        flex items-center justify-center
+                        shadow-md
+                        transition-all duration-150
+                        cursor-pointer
+                      "
+                    >
+                      <Pencil size={10} />
+                    </button>
+                  </div>
 
-              {/* Small Compact Photo Options Box (moved to the left of the main menu) */}
-              {photoMenuOpen && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="
-                    absolute
-                    top-0
-                    right-full
-                    mr-2
-                    w-48
-                    rounded-xl
-                    bg-[#1e2332]
-                    border border-white/15
-                    shadow-[0_12px_32px_rgba(0,0,0,0.85)]
-                    p-1.5
-                    z-50
-                    animate-in fade-in slide-in-from-right-2
-                    duration-150
-                  "
-                >
-                  {cameraActive ? (
-                    /* Compact Camera View */
-                    <div className="p-2 space-y-2 text-center">
-                      {cameraError ? (
-                        <div className="text-[11px] text-red-400 p-1">
-                          {cameraError}
-                          <button
-                            type="button"
-                            onClick={() => setCameraActive(false)}
-                            className="block mx-auto mt-1.5 text-[10px] text-zinc-300 underline cursor-pointer"
-                          >
-                            Back to options
-                          </button>
+                  <div className="overflow-hidden min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold text-white truncate">
+                      {displayName}
+                    </p>
+                    {user?.email && (
+                      <p className="text-[11px] text-zinc-400 truncate">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Small Compact Photo Options Box (anchored to the left of the menu) */}
+                  {photoMenuOpen && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="
+                        absolute
+                        top-0
+                        right-full
+                        mr-2
+                        w-48
+                        rounded-xl
+                        bg-[#1e2332]
+                        border border-white/15
+                        shadow-[0_12px_32px_rgba(0,0,0,0.85)]
+                        p-1.5
+                        z-50
+                        animate-in fade-in slide-in-from-right-2
+                        duration-150
+                      "
+                    >
+                      {cameraActive ? (
+                        /* Compact Camera View */
+                        <div className="p-2 space-y-2 text-center">
+                          {cameraError ? (
+                            <div className="text-[11px] text-red-400 p-1">
+                              {cameraError}
+                              <button
+                                type="button"
+                                onClick={() => setCameraActive(false)}
+                                className="block mx-auto mt-1.5 text-[10px] text-zinc-300 underline cursor-pointer"
+                              >
+                                Back to options
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-[#F8B4C8] bg-black shadow-inner">
+                                <video
+                                  ref={videoRef}
+                                  autoPlay
+                                  playsInline
+                                  muted
+                                  className="w-full h-full object-cover scale-x-[-1]"
+                                />
+                              </div>
+                              <div className="flex items-center justify-center gap-1.5 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={handleSnapForCrop}
+                                  className="px-2.5 py-1 rounded-lg bg-[#F8B4C8] text-[#161925] font-bold text-[11px] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                                >
+                                  <Camera size={12} />
+                                  <span>Snap</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={stopCamera}
+                                  className="px-2 py-1 rounded-lg bg-white/10 text-zinc-300 hover:text-white text-[11px] cursor-pointer transition-all"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
-                        <>
-                          <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-[#F8B4C8] bg-black shadow-inner">
-                            <video
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              className="w-full h-full object-cover scale-x-[-1]"
-                            />
-                          </div>
-                          <div className="flex items-center justify-center gap-1.5 pt-1">
+                        /* Small clean action list */
+                        <div className="space-y-0.5">
+                          {user?.profilePhotoUrl && (
                             <button
                               type="button"
-                              onClick={handleSnapForCrop}
-                              className="px-2.5 py-1 rounded-lg bg-[#F8B4C8] text-[#161925] font-bold text-[11px] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                              onClick={() => {
+                                setPhotoMenuOpen(false);
+                                setMenuView("view_photo");
+                              }}
+                              className="
+                                w-full flex items-center gap-2
+                                px-2.5 py-1.5
+                                rounded-lg
+                                text-[12px] font-medium
+                                text-zinc-200
+                                hover:bg-white/10 hover:text-white
+                                transition-colors
+                                cursor-pointer
+                              "
                             >
-                              <Camera size={12} />
-                              <span>Snap</span>
+                              <Eye size={14} className="text-[#F8B4C8]" />
+                              <span>View Photo</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={stopCamera}
-                              className="px-2 py-1 rounded-lg bg-white/10 text-zinc-300 hover:text-white text-[11px] cursor-pointer transition-all"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    /* Small clean action list without Crop Photo */
-                    <div className="space-y-0.5">
-                      {/* Option: View Photo (if user has photo) */}
-                      {user?.profilePhotoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPhotoMenuOpen(false);
-                            setIsOpen(false);
-                            setIsViewerOpen(true);
-                          }}
-                          className="
-                            w-full flex items-center gap-2
-                            px-2.5 py-1.5
-                            rounded-lg
-                            text-[12px] font-medium
-                            text-zinc-200
-                            hover:bg-white/10 hover:text-white
-                            transition-colors
-                            cursor-pointer
-                          "
-                        >
-                          <Eye size={14} className="text-[#F8B4C8]" />
-                          <span>View Photo</span>
-                        </button>
-                      )}
-
-                      {/* Option: Take Photo */}
-                      <button
-                        type="button"
-                        onClick={startCamera}
-                        className="
-                          w-full flex items-center gap-2
-                          px-2.5 py-1.5
-                          rounded-lg
-                          text-[12px] font-medium
-                          text-zinc-200
-                          hover:bg-white/10 hover:text-white
-                          transition-colors
-                          cursor-pointer
-                        "
-                      >
-                        <Camera size={14} className="text-[#F8B4C8]" />
-                        <span>Take Photo</span>
-                      </button>
-
-                      {/* Option: Upload from Device */}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="
-                          w-full flex items-center gap-2
-                          px-2.5 py-1.5
-                          rounded-lg
-                          text-[12px] font-medium
-                          text-zinc-200
-                          hover:bg-white/10 hover:text-white
-                          transition-colors
-                          cursor-pointer
-                        "
-                      >
-                        <Upload size={14} className="text-[#F8B4C8]" />
-                        <span>Upload from Device</span>
-                      </button>
-
-                      {/* Option: Remove Photo */}
-                      {user?.profilePhotoUrl && (
-                        <button
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          disabled={isSavingPhoto}
-                          className="
-                            w-full flex items-center gap-2
-                            px-2.5 py-1.5
-                            rounded-lg
-                            text-[12px] font-medium
-                            text-red-400
-                            hover:bg-red-500/10 hover:text-red-300
-                            transition-colors
-                            cursor-pointer
-                          "
-                        >
-                          {isSavingPhoto ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={14} />
                           )}
-                          <span>Remove Photo</span>
-                        </button>
+
+                          <button
+                            type="button"
+                            onClick={startCamera}
+                            className="
+                              w-full flex items-center gap-2
+                              px-2.5 py-1.5
+                              rounded-lg
+                              text-[12px] font-medium
+                              text-zinc-200
+                              hover:bg-white/10 hover:text-white
+                              transition-colors
+                              cursor-pointer
+                            "
+                          >
+                            <Camera size={14} className="text-[#F8B4C8]" />
+                            <span>Take Photo</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="
+                              w-full flex items-center gap-2
+                              px-2.5 py-1.5
+                              rounded-lg
+                              text-[12px] font-medium
+                              text-zinc-200
+                              hover:bg-white/10 hover:text-white
+                              transition-colors
+                              cursor-pointer
+                            "
+                          >
+                            <Upload size={14} className="text-[#F8B4C8]" />
+                            <span>Upload from Device</span>
+                          </button>
+
+                          {user?.profilePhotoUrl && (
+                            <button
+                              type="button"
+                              onClick={handleRemovePhoto}
+                              disabled={isSavingPhoto}
+                              className="
+                                w-full flex items-center gap-2
+                                px-2.5 py-1.5
+                                rounded-lg
+                                text-[12px] font-medium
+                                text-red-400
+                                hover:bg-red-500/10 hover:text-red-300
+                                transition-colors
+                                cursor-pointer
+                              "
+                            >
+                              {isSavingPhoto ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                              <span>Remove Photo</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className="h-[1px] bg-white/10 my-2" />
+                <div className="h-[1px] bg-white/10 my-2" />
 
-            {/* Menu Actions */}
-            <div className="space-y-1">
-              {profileComplete ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setIsOpen(false)}
+                {/* Menu Actions */}
+                <div className="space-y-1">
+                  {profileComplete ? (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsOpen(false)}
+                        className="
+                          flex items-center gap-2.5
+                          px-3 py-2.5
+                          rounded-xl
+                          text-[13px]
+                          font-medium
+                          text-zinc-200
+                          hover:bg-white/10
+                          hover:text-white
+                          transition-colors
+                        "
+                      >
+                        <Compass size={16} className="text-[#F8B4C8]" />
+                        <span>Discover</span>
+                      </Link>
+
+                      <Link
+                        href="/onboarding"
+                        onClick={() => setIsOpen(false)}
+                        className="
+                          flex items-center gap-2.5
+                          px-3 py-2.5
+                          rounded-xl
+                          text-[13px]
+                          font-medium
+                          text-zinc-200
+                          hover:bg-white/10
+                          hover:text-white
+                          transition-colors
+                        "
+                      >
+                        <UserCheck size={16} className="text-[#F8B4C8]" />
+                        <span>Edit Profile</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <Link
+                      href="/onboarding"
+                      onClick={() => setIsOpen(false)}
+                      className="
+                        flex items-center gap-2.5
+                        px-3 py-2.5
+                        rounded-xl
+                        text-[13px]
+                        font-medium
+                        text-white
+                        bg-[#F8B4C8]/15
+                        border border-[#F8B4C8]/30
+                        hover:bg-[#F8B4C8]/25
+                        transition-colors
+                      "
+                    >
+                      <Sparkles size={16} className="text-[#F8B4C8]" />
+                      <span>Complete Profile</span>
+                    </Link>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
                     className="
+                      w-full
                       flex items-center gap-2.5
                       px-3 py-2.5
                       rounded-xl
                       text-[13px]
                       font-medium
-                      text-zinc-200
-                      hover:bg-white/10
-                      hover:text-white
+                      text-red-400
+                      hover:bg-red-500/10
+                      hover:text-red-300
                       transition-colors
+                      cursor-pointer
                     "
                   >
-                    <Compass size={16} className="text-[#F8B4C8]" />
-                    <span>Discover</span>
-                  </Link>
-
-                  <Link
-                    href="/onboarding"
-                    onClick={() => setIsOpen(false)}
-                    className="
-                      flex items-center gap-2.5
-                      px-3 py-2.5
-                      rounded-xl
-                      text-[13px]
-                      font-medium
-                      text-zinc-200
-                      hover:bg-white/10
-                      hover:text-white
-                      transition-colors
-                    "
-                  >
-                    <UserCheck size={16} className="text-[#F8B4C8]" />
-                    <span>Edit Profile</span>
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href="/onboarding"
-                  onClick={() => setIsOpen(false)}
-                  className="
-                    flex items-center gap-2.5
-                    px-3 py-2.5
-                    rounded-xl
-                    text-[13px]
-                    font-medium
-                    text-white
-                    bg-[#F8B4C8]/15
-                    border border-[#F8B4C8]/30
-                    hover:bg-[#F8B4C8]/25
-                    transition-colors
-                  "
-                >
-                  <Sparkles size={16} className="text-[#F8B4C8]" />
-                  <span>Complete Profile</span>
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="
-                  w-full
-                  flex items-center gap-2.5
-                  px-3 py-2.5
-                  rounded-xl
-                  text-[13px]
-                  font-medium
-                  text-red-400
-                  hover:bg-red-500/10
-                  hover:text-red-300
-                  transition-colors
-                  cursor-pointer
-                "
-              >
-                <LogOut size={16} />
-                <span>Log Out</span>
-              </button>
-            </div>
+                    <LogOut size={16} />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
-
-      {/* Photo Viewer Modal */}
-      <PhotoViewerModal
-        isOpen={isViewerOpen}
-        onClose={() => setIsViewerOpen(false)}
-        photoUrl={user?.profilePhotoUrl || null}
-        displayName={displayName}
-        initials={initials}
-        onEditCrop={() => {
-          setCropImageSrc(user?.profilePhotoUrl || null);
-          setIsCropModalOpen(true);
-        }}
-        onChangePhoto={() => {
-          setIsOpen(true);
-          setPhotoMenuOpen(true);
-        }}
-        onRemovePhoto={handleRemovePhoto}
-      />
 
       {/* Interactive Photo Crop Modal */}
       <PhotoCropModal
