@@ -155,7 +155,7 @@ interface RecommendationsGridProps {
 }
 
 export default function RecommendationsGrid({ topN = 10 }: RecommendationsGridProps) {
-  const { matches, totalEvaluated, status, errorMessage, refetch } =
+  const { matches, status, errorMessage, refetch } =
     useRecommendations(topN);
 
   return (
@@ -169,12 +169,6 @@ export default function RecommendationsGrid({ topN = 10 }: RecommendationsGridPr
           >
             Your Matches
           </h2>
-          {status === "success" && (
-            <p className="text-[13px] font-medium mt-0.5" style={{ color: "#494F66" }}>
-              {matches.length} match{matches.length !== 1 ? "es" : ""} from{" "}
-              {totalEvaluated} evaluated
-            </p>
-          )}
         </div>
 
         {status === "success" && (
