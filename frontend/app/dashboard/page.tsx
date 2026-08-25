@@ -13,10 +13,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardGuard>
-      <div
-        className="min-h-screen flex flex-col"
-        style={{ background: "#545B73" }}
-      >
+      <div className="min-h-screen flex flex-col bg-transparent">
         <Navbar />
 
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-12">
