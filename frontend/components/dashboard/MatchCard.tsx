@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 import type { CandidateMatchItem } from "@/types/matching";
 
 const SIGNAL_LABELS: Record<string, string> = {
@@ -60,7 +62,9 @@ function SignalBar({
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-[12px] font-medium" style={{ color: "#494F66" }}>{label}</span>
+        <span className="text-[12px] font-medium" style={{ color: "#494F66" }}>
+          {label}
+        </span>
         <span className="text-[12px] font-bold tabular-nums" style={{ color }}>
           {pct}%
         </span>
@@ -73,7 +77,7 @@ function SignalBar({
           className="h-full rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
-          transition={{ duration: 1, delay, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay, ease: "easeOut" }}
           style={{
             background: `linear-gradient(90deg, ${color}88, ${color})`,
             boxShadow: `0 0 6px ${color}40`,
@@ -90,6 +94,8 @@ interface MatchCardProps {
 }
 
 export default function MatchCard({ candidate, index }: MatchCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const pred = candidate.prediction as "High" | "Medium" | "Low";
   const cfg = PREDICTION_CONFIG[pred] ?? PREDICTION_CONFIG.Medium;
   const confidencePct = Math.round(candidate.confidence * 100);
@@ -108,25 +114,29 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
     [candidate.first_name, candidate.last_name].filter(Boolean).join(" ") ||
     "Unknown";
 
-  const subtitle = [
-    candidate.occupation,
-    candidate.city,
+  // Only age and place of living shown in the primary row
+  const ageAndLocation = [
     candidate.age ? `${candidate.age} yrs` : null,
-    candidate.gender,
+    candidate.city ? candidate.city : null,
   ]
+    .filter(Boolean)
+    .join(" · ");
+
+  // Extra details shown when expanded
+  const extraDetails = [candidate.occupation, candidate.gender]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.08 * index, ease: "easeOut" }}
-      className="relative rounded-xl overflow-hidden"
+      transition={{ duration: 0.35, delay: 0.05 * index, ease: "easeOut" }}
+      className="relative rounded-xl overflow-hidden transition-all duration-200"
       style={{
         background: "#ffffff",
         border: "1.5px solid #EBD6CF",
-        boxShadow: "0 4px 24px rgba(73,79,102,0.10)",
+        boxShadow: "0 2px 12px rgba(73,79,102,0.06)",
       }}
     >
       {/* Top accent line */}
@@ -137,12 +147,17 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
         }}
       />
 
-      <div className="p-5">
-        {/* ── Header ── */}
-        <div className="flex items-start gap-3 mb-4">
-          {/* Avatar */}
+      {/* ── Collapsed Clickable Header Row ── */}
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left cursor-pointer select-none hover:bg-[#F8ECE8]/30 transition-colors focus:outline-none"
+        aria-expanded={isExpanded}
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          {/* Profile Picture */}
           <div
-            className="relative w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
+            className="relative w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center shadow-xs"
             style={{
               border: "1.5px solid #EBD6CF",
               background: "#F6D7CF",
@@ -163,24 +178,35 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
             )}
           </div>
 
-          {/* Name / subtitle */}
-          <div className="flex-1 min-w-0 pt-0.5">
+          {/* Name (Enlarged) + Age and Place of living */}
+          <div className="min-w-0 flex-1">
             <h3
-              className="text-[15px] font-bold truncate tracking-tight"
+              className="text-[17px] sm:text-[19px] font-bold truncate tracking-tight"
               style={{ color: "#2D3246" }}
             >
               {displayName}
             </h3>
-            {subtitle && (
-              <p className="text-[12px] font-medium mt-0.5 truncate" style={{ color: "#494F66" }}>
-                {subtitle}
+            {ageAndLocation ? (
+              <p
+                className="text-[13px] font-medium mt-0.5 truncate"
+                style={{ color: "#494F66" }}
+              >
+                {ageAndLocation}
+              </p>
+            ) : (
+              <p
+                className="text-[13px] font-medium mt-0.5 truncate text-zinc-400"
+              >
+                Location & Age not specified
               </p>
             )}
           </div>
+        </div>
 
-          {/* Prediction badge */}
+        {/* Right side: Badge + Chevron expand icon */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div
-            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold"
             style={{
               background: cfg.bg,
               border: `1.5px solid ${cfg.border}`,
@@ -195,86 +221,170 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
             />
             {pred}
           </div>
-        </div>
 
-        {/* ── Confidence score box ── */}
-        <div
-          className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between"
-          style={{
-            background: "#F8ECE8",
-            border: "1px solid #EBD6CF",
-          }}
-        >
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color: "#8b92a5" }}>
-              ML Confidence
-            </p>
-            <p className="text-[26px] font-bold leading-none mt-1" style={{ color: "#2D3246" }}>
-              {confidencePct}
-              <span className="text-[14px] font-semibold ml-0.5" style={{ color: "#8b92a5" }}>%</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color: "#8b92a5" }}>
-              Compatibility
-            </p>
-            <p className="text-[13px] font-bold mt-1" style={{ color: cfg.text }}>
-              {pred} Match
-            </p>
-          </div>
-        </div>
-
-        {/* ── Divider ── */}
-        <div className="h-[1px] mb-4" style={{ background: "#EBD6CF" }} />
-
-        {/* ── Feature signals ── */}
-        <div className="space-y-2.5">
-          {signalKeys.map((key, i) => {
-            const val = candidate.feature_signals[key];
-            if (val === undefined) return null;
-            return (
-              <SignalBar
-                key={key}
-                label={SIGNAL_LABELS[key] ?? key}
-                value={val}
-                color={SIGNAL_COLORS[key] ?? "#494F66"}
-                delay={0.08 * index + 0.4 + i * 0.06}
-              />
-            );
-          })}
-        </div>
-
-        {/* ── Rule-based score footer ── */}
-        <div
-          className="mt-4 pt-3 flex items-center justify-between"
-          style={{ borderTop: "1px solid #EBD6CF" }}
-        >
-          <div className="flex items-center gap-1.5">
-            <div
-              className="w-4 h-4 rounded-full flex items-center justify-center"
-              style={{
-                background: "#F6D7CF",
-                border: "1.5px solid #E5ADA2",
-              }}
-            >
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#D97870" }} />
-            </div>
-            <span className="text-[11px] font-semibold" style={{ color: "#8b92a5" }}>
-              Rule Score
-            </span>
-          </div>
-          <span
-            className="text-[12px] font-bold px-2.5 py-0.5 rounded-full"
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-200"
             style={{
-              background: "#F6D7CF",
-              border: "1.5px solid #E5ADA2",
-              color: "#D97870",
+              background: "#F8ECE8",
+              color: "#494F66",
+              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
             }}
           >
-            {Math.round(candidate.rule_based_explainability.rule_score)}%
-          </span>
+            <ChevronDown size={15} />
+          </div>
         </div>
-      </div>
+      </button>
+
+      {/* ── Expandable Description & Breakdown (Shown when clicked) ── */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key="details"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div
+              className="p-5 sm:p-6 border-t space-y-4"
+              style={{
+                background: "#FAF4F2",
+                borderColor: "#EBD6CF",
+              }}
+            >
+              {/* Extra info chip if available */}
+              {extraDetails && (
+                <div className="flex items-center gap-2 pb-1">
+                  <span
+                    className="text-[12px] font-semibold px-2.5 py-1 rounded-md"
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #EBD6CF",
+                      color: "#494F66",
+                    }}
+                  >
+                    {extraDetails}
+                  </span>
+                </div>
+              )}
+
+              {/* Confidence score box */}
+              <div
+                className="px-4 py-3 rounded-xl flex items-center justify-between"
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #EBD6CF",
+                }}
+              >
+                <div>
+                  <p
+                    className="text-[10px] uppercase tracking-[0.18em] font-bold"
+                    style={{ color: "#8b92a5" }}
+                  >
+                    ML Confidence
+                  </p>
+                  <p
+                    className="text-[26px] font-bold leading-none mt-1"
+                    style={{ color: "#2D3246" }}
+                  >
+                    {confidencePct}
+                    <span
+                      className="text-[14px] font-semibold ml-0.5"
+                      style={{ color: "#8b92a5" }}
+                    >
+                      %
+                    </span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p
+                    className="text-[10px] uppercase tracking-[0.18em] font-bold"
+                    style={{ color: "#8b92a5" }}
+                  >
+                    Compatibility
+                  </p>
+                  <p
+                    className="text-[13px] font-bold mt-1"
+                    style={{ color: cfg.text }}
+                  >
+                    {pred} Match
+                  </p>
+                </div>
+              </div>
+
+              {/* Sub-dimensional signals */}
+              <div
+                className="p-4 rounded-xl space-y-2.5"
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #EBD6CF",
+                }}
+              >
+                <p
+                  className="text-[11px] font-bold uppercase tracking-[0.15em] mb-2"
+                  style={{ color: "#8b92a5" }}
+                >
+                  Compatibility Signals
+                </p>
+                {signalKeys.map((key, i) => {
+                  const val = candidate.feature_signals[key];
+                  if (val === undefined) return null;
+                  return (
+                    <SignalBar
+                      key={key}
+                      label={SIGNAL_LABELS[key] ?? key}
+                      value={val}
+                      color={SIGNAL_COLORS[key] ?? "#494F66"}
+                      delay={0.05 * i}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Rule-based score footer */}
+              <div
+                className="p-3.5 rounded-xl flex items-center justify-between"
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #EBD6CF",
+                }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "#F6D7CF",
+                      border: "1.5px solid #E5ADA2",
+                    }}
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: "#D97870" }}
+                    />
+                  </div>
+                  <span
+                    className="text-[12px] font-semibold"
+                    style={{ color: "#8b92a5" }}
+                  >
+                    Rule Score
+                  </span>
+                </div>
+                <span
+                  className="text-[12px] font-bold px-2.5 py-0.5 rounded-full"
+                  style={{
+                    background: "#F6D7CF",
+                    border: "1.5px solid #E5ADA2",
+                    color: "#D97870",
+                  }}
+                >
+                  {Math.round(candidate.rule_based_explainability.rule_score)}%
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -5,35 +5,36 @@ import { Loader2, Users, AlertCircle, WifiOff, RefreshCw } from "lucide-react";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import MatchCard from "./MatchCard";
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
+// ── Loading skeleton for vertical list items ──────────────────────────────────
 function SkeletonCard() {
   return (
     <div
-      className="rounded-xl overflow-hidden p-5 animate-pulse"
+      className="rounded-xl overflow-hidden p-4 sm:p-5 animate-pulse flex items-center justify-between gap-4"
       style={{
         background: "#ffffff",
         border: "1.5px solid #EBD6CF",
       }}
     >
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: "#F6D7CF" }} />
-        <div className="flex-1 space-y-2 pt-1">
-          <div className="h-3 rounded" style={{ background: "#EBD6CF", width: "70%" }} />
-          <div className="h-2.5 rounded" style={{ background: "#F6D7CF", width: "50%" }} />
+      <div className="flex items-center gap-3.5 flex-1 min-w-0">
+        <div
+          className="w-12 h-12 rounded-xl flex-shrink-0"
+          style={{ background: "#F6D7CF" }}
+        />
+        <div className="flex-1 space-y-2">
+          <div
+            className="h-4 rounded"
+            style={{ background: "#EBD6CF", width: "40%" }}
+          />
+          <div
+            className="h-3 rounded"
+            style={{ background: "#F6D7CF", width: "25%" }}
+          />
         </div>
-        <div className="w-14 h-6 rounded-full" style={{ background: "#F6D7CF" }} />
       </div>
-      <div className="h-[64px] rounded-xl mb-4" style={{ background: "#F8ECE8" }} />
-      <div className="h-[1px] mb-4" style={{ background: "#EBD6CF" }} />
-      {[...Array(7)].map((_, i) => (
-        <div key={i} className="mb-2.5 space-y-1">
-          <div className="flex justify-between">
-            <div className="h-2 rounded" style={{ background: "#EBD6CF", width: "80px" }} />
-            <div className="h-2 rounded" style={{ background: "#EBD6CF", width: "32px" }} />
-          </div>
-          <div className="h-1.5 rounded-full" style={{ background: "#F6D7CF" }} />
-        </div>
-      ))}
+      <div
+        className="w-16 h-7 rounded-full flex-shrink-0"
+        style={{ background: "#F6D7CF" }}
+      />
     </div>
   );
 }
@@ -45,7 +46,7 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center rounded-xl"
+      className="flex flex-col items-center justify-center py-16 px-8 text-center rounded-xl"
       style={{
         background: "#ffffff",
         border: "1.5px solid #EBD6CF",
@@ -61,13 +62,17 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
       <h3 className="text-[18px] font-bold mb-2" style={{ color: "#2D3246" }}>
         No Matches Yet
       </h3>
-      <p className="text-[13px] max-w-xs leading-relaxed mb-5" style={{ color: "#494F66" }}>
-        We couldn't find compatible roommates yet. Try refreshing or updating your profile.
+      <p
+        className="text-[13px] max-w-xs leading-relaxed mb-5"
+        style={{ color: "#494F66" }}
+      >
+        We couldn't find compatible roommates yet. Try refreshing or updating
+        your profile.
       </p>
       <button
         id="empty-refresh-btn"
         onClick={onRefresh}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer hover:opacity-90 active:scale-95"
         style={{
           background: "#F6D7CF",
           border: "1.5px solid #E5ADA2",
@@ -102,7 +107,7 @@ function ErrorState({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center rounded-xl"
+      className="flex flex-col items-center justify-center py-16 px-8 text-center rounded-xl"
       style={{
         background: "#ffffff",
         border: "1.5px solid #EBD6CF",
@@ -112,7 +117,9 @@ function ErrorState({
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
         style={{
-          background: isUnauthorized ? "rgba(220,38,38,0.08)" : "rgba(217,119,6,0.08)",
+          background: isUnauthorized
+            ? "rgba(220,38,38,0.08)"
+            : "rgba(217,119,6,0.08)",
           border: `1.5px solid ${isUnauthorized ? "#fca5a5" : "#fcd34d"}`,
         }}
       >
@@ -127,14 +134,17 @@ function ErrorState({
       >
         {title}
       </h3>
-      <p className="text-[13px] max-w-xs leading-relaxed mb-5" style={{ color: "#494F66" }}>
+      <p
+        className="text-[13px] max-w-xs leading-relaxed mb-5"
+        style={{ color: "#494F66" }}
+      >
         {hint}
       </p>
       {!isUnauthorized && (
         <button
           id="error-refresh-btn"
           onClick={onRefresh}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer hover:opacity-90 active:scale-95"
           style={{
             background: "#F6D7CF",
             border: "1.5px solid #E5ADA2",
@@ -149,14 +159,15 @@ function ErrorState({
   );
 }
 
-// ── Main grid ─────────────────────────────────────────────────────────────────
+// ── Main vertical list ────────────────────────────────────────────────────────
 interface RecommendationsGridProps {
   topN?: number;
 }
 
-export default function RecommendationsGrid({ topN = 10 }: RecommendationsGridProps) {
-  const { matches, status, errorMessage, refetch } =
-    useRecommendations(topN);
+export default function RecommendationsGrid({
+  topN = 10,
+}: RecommendationsGridProps) {
+  const { matches, status, errorMessage, refetch } = useRecommendations(topN);
 
   return (
     <section>
@@ -176,7 +187,7 @@ export default function RecommendationsGrid({ topN = 10 }: RecommendationsGridPr
             id="recommendations-refresh-btn"
             onClick={refetch}
             title="Refresh recommendations"
-            className="p-2.5 rounded-xl transition-all flex items-center justify-center"
+            className="p-2.5 rounded-xl transition-all flex items-center justify-center cursor-pointer hover:opacity-90 active:scale-95"
             style={{
               border: "1.5px solid #EBD6CF",
               background: "#F6D7CF",
@@ -188,35 +199,50 @@ export default function RecommendationsGrid({ topN = 10 }: RecommendationsGridPr
         )}
       </div>
 
-      {/* ── Grid body ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* ── Vertical List body ── */}
+      <div className="flex flex-col gap-3.5">
         {status === "loading" && (
           <>
-            {[...Array(Math.min(topN, 6))].map((_, i) => (
+            {[...Array(Math.min(topN, 4))].map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </>
         )}
 
         {status === "idle" && (
-          <div className="col-span-full flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#D97870" }} />
+          <div className="flex items-center justify-center py-20">
+            <Loader2
+              className="w-8 h-8 animate-spin"
+              style={{ color: "#D97870" }}
+            />
           </div>
         )}
 
         {status === "success" &&
           matches.map((candidate, i) => (
-            <MatchCard key={candidate.candidate_id} candidate={candidate} index={i} />
+            <MatchCard
+              key={candidate.candidate_id}
+              candidate={candidate}
+              index={i}
+            />
           ))}
 
         {status === "empty" && <EmptyState onRefresh={refetch} />}
 
         {status === "unauthorized" && (
-          <ErrorState message={errorMessage} isUnauthorized={true} onRefresh={refetch} />
+          <ErrorState
+            message={errorMessage}
+            isUnauthorized={true}
+            onRefresh={refetch}
+          />
         )}
 
         {status === "error" && (
-          <ErrorState message={errorMessage} isUnauthorized={false} onRefresh={refetch} />
+          <ErrorState
+            message={errorMessage}
+            isUnauthorized={false}
+            onRefresh={refetch}
+          />
         )}
       </div>
     </section>
