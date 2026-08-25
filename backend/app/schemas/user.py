@@ -37,7 +37,7 @@ class CurrentUserResponse(BaseModel):
     id: UUID
     username: str
     email: str | None
-    is_email_verified: bool
+    email_verified: bool = False
     is_active: bool
 
     created_at: datetime

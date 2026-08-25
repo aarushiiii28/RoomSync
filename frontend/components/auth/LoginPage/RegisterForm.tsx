@@ -85,11 +85,11 @@ export default function RegisterForm() {
         password,
       });
 
-      setSuccess("Account Created!");
+      setSuccess("Account created! Please verify your email.");
 
       setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      }, 1200);
 
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { detail?: string } } };

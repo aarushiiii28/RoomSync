@@ -17,6 +17,7 @@ export interface CurrentUser {
   username: string;
   email: string | null;
   is_active: boolean;
+  email_verified?: boolean;
   is_email_verified?: boolean;
 }
 

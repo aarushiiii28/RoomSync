@@ -33,11 +33,22 @@ CREATE TABLE IF NOT EXISTS users (
     username    TEXT NOT NULL UNIQUE,
     email       TEXT,
     password_hash TEXT NOT NULL,
-    is_email_verified INTEGER NOT NULL DEFAULT 0,
+    email_verified INTEGER NOT NULL DEFAULT 0,
     is_active   INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
     last_login_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+    id          TEXT PRIMARY KEY,
+    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    otp_hash    TEXT NOT NULL,
+    expires_at  TEXT NOT NULL,
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    used_at     TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    last_sent_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -200,6 +211,7 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
             username="testuser1",
             email="testuser1@example.com",
             password_hash=hash_password("Password123!"),
+            email_verified=True,
             is_active=True,
         )
         cls.p1 = UserProfile(
@@ -243,6 +255,7 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
             username="testuser2",
             email="testuser2@example.com",
             password_hash=hash_password("Password123!"),
+            email_verified=True,
             is_active=True,
         )
         cls.p2 = UserProfile(

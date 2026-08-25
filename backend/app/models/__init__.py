@@ -1,6 +1,7 @@
 # Phase 1 — Auth models
 from app.models.user import User
 from app.models.refresh_token import RefreshToken
+from app.models.email_verification import EmailVerification
 
 # Phase 2 — User Profile & Onboarding models
 from app.models.user_profile import UserProfile

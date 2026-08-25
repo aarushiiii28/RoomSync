@@ -87,7 +87,17 @@ export default function LoginForm() {
       />
 
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <div className="text-sm text-red-400">
+          <span>{error}</span>
+          {error.toLowerCase().includes("verify your email") && (
+            <Link
+              href={`/verify-email?email=${encodeURIComponent(username)}`}
+              className="text-[#D97870] font-semibold underline ml-1 hover:text-white transition-colors"
+            >
+              Verify now
+            </Link>
+          )}
+        </div>
       )}
 
       {/* Remember Me + Forgot Password */}

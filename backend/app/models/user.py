@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from datetime import datetime
-from uuid import UUID
-from typing import TYPE_CHECKING, Optional
+from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Optional, List
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -17,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.lifestyle_profile import LifestyleProfile
     from app.models.roommate_preference import RoommatePreference
     from app.models.accommodation_preference import AccommodationPreference
+    from app.models.email_verification import EmailVerification
 
 
 
@@ -26,6 +25,7 @@ class User(Base):
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         primary_key=True,
+        default=uuid4,
         server_default=func.gen_random_uuid(),
     )
 
@@ -52,13 +52,6 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-    )
-
-    is_email_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default="false",
     )
 
 
@@ -123,5 +116,11 @@ class User(Base):
         "AccommodationPreference",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    email_verifications: Mapped[List["EmailVerification"]] = relationship(
+        "EmailVerification",
+        back_populates="user",
         cascade="all, delete-orphan",
     )

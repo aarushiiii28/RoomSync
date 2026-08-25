@@ -17,6 +17,7 @@ from app.services.security import (
     hash_refresh_token,
     verify_password,
 )
+from app.services.email_verification import create_and_send_verification_otp
 
 
 def register_user(db: Session, user_data: UserRegister) -> User:
@@ -37,11 +38,19 @@ def register_user(db: Session, user_data: UserRegister) -> User:
         username=user_data.username,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
+        email_verified=False,
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    if new_user.email:
+        try:
+            create_and_send_verification_otp(db=db, user=new_user)
+        except Exception:
+            # User created, verification dispatch attempted
+            pass
 
     return new_user
 
@@ -183,6 +192,9 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
         user.password_hash,
     ):
         raise ValueError("Invalid username or password.")
+
+    if not user.email_verified:
+        raise ValueError("Please verify your email before logging in.")
 
     try:
         token_pair = _issue_tokens(

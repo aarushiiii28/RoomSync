@@ -5,7 +5,12 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.schemas.auth import RefreshTokenRequest
+from app.schemas.auth import (
+    RefreshTokenRequest,
+    ResendVerificationRequest,
+    VerifyEmailRequest,
+    VerifyEmailResponse,
+)
 from app.schemas.token import Token
 from app.schemas.user import UserLogin, UserRegister, UserResponse
 from app.services.auth import (
@@ -15,11 +20,60 @@ from app.services.auth import (
     refresh_access_token,
     register_user,
 )
+from app.services.email_verification import (
+    resend_verification_otp,
+    verify_email_otp,
+)
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
+
+
+@router.post(
+    "/verify-email",
+    response_model=VerifyEmailResponse,
+    status_code=status.HTTP_200_OK,
+)
+def verify_email(
+    request_data: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        msg = verify_email_otp(
+            db=db,
+            email_or_username=request_data.email,
+            plain_otp=request_data.otp,
+        )
+        return VerifyEmailResponse(message=msg)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/resend-verification",
+    response_model=VerifyEmailResponse,
+    status_code=status.HTTP_200_OK,
+)
+def resend_verification(
+    request_data: ResendVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        msg = resend_verification_otp(
+            db=db,
+            email_or_username=request_data.email,
+        )
+        return VerifyEmailResponse(message=msg)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
 @router.post(
