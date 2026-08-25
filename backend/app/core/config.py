@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "RoomSync <onboarding@resend.dev>"
     FRONTEND_URL: str = "http://localhost:3000"
-    OTP_EXPIRY_MINUTES: int = 10
+    OTP_EXPIRY_MINUTES: int = 5
     OTP_MAX_ATTEMPTS: int = 5
     OTP_RESEND_COOLDOWN_SECONDS: int = 60
 

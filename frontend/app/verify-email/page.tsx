@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { Mail, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, Clock } from "lucide-react";
 import LoginImage from "@/components/auth/LoginPage/LoginImage";
 import PrimaryButton from "@/components/auth/shared/PrimaryButton";
 import { verifyEmail, resendVerification } from "@/services/emailVerification";
@@ -20,6 +20,7 @@ function VerifyEmailForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(300); // 5-minute countdown (300 seconds)
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -30,7 +31,7 @@ function VerifyEmailForm() {
     }
   }, [emailParam]);
 
-  // Cooldown countdown timer
+  // Cooldown countdown timer (60s resend rate limit)
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setInterval(() => {
@@ -38,6 +39,23 @@ function VerifyEmailForm() {
     }, 1000);
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  // 5-minute OTP expiry countdown timer
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  const isExpired = timeLeft === 0;
+
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
 
   const handleOtpChange = (index: number, value: string) => {
     // Handle pasting a full 6-digit code
@@ -85,6 +103,11 @@ function VerifyEmailForm() {
       return;
     }
 
+    if (isExpired) {
+      setError("This verification code has expired. Please click Resend Code to receive a new OTP.");
+      return;
+    }
+
     if (fullOtp.length !== 6) {
       setError("Please enter the complete 6-digit verification code.");
       return;
@@ -110,7 +133,7 @@ function VerifyEmailForm() {
   }
 
   async function handleResend() {
-    if (cooldown > 0 || resending) return;
+    if ((cooldown > 0 && !isExpired) || resending) return;
     setError("");
     setSuccess("");
 
@@ -124,6 +147,7 @@ function VerifyEmailForm() {
       const res = await resendVerification(email);
       setSuccess(res.message || "A new verification code has been sent!");
       setCooldown(60);
+      setTimeLeft(300); // Reset 5-minute timer
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } catch (err: unknown) {
@@ -156,6 +180,13 @@ function VerifyEmailForm() {
         </div>
       )}
 
+      {isExpired && !error && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[13px] leading-relaxed animate-in fade-in">
+          <Clock size={16} className="shrink-0 mt-0.5" />
+          <span>Your OTP has expired. Please click <strong>Resend Code</strong> below to receive a new one.</span>
+        </div>
+      )}
+
       {success && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[13px] leading-relaxed animate-in fade-in">
           <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
@@ -163,7 +194,7 @@ function VerifyEmailForm() {
         </div>
       )}
 
-      <form onSubmit={handleVerify} className="space-y-6">
+      <form onSubmit={handleVerify} className="space-y-5">
         {!emailParam && (
           <div className="space-y-1.5">
             <label className="text-[12px] font-semibold text-[#A6ACBE] uppercase tracking-wider">
@@ -184,9 +215,18 @@ function VerifyEmailForm() {
         )}
 
         <div className="space-y-2">
-          <label className="text-[12px] font-semibold text-[#A6ACBE] uppercase tracking-wider">
-            6-Digit Verification Code
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-[12px] font-semibold text-[#A6ACBE] uppercase tracking-wider">
+              6-Digit Verification Code
+            </label>
+            <div className="flex items-center gap-1.5 text-[12px]">
+              <Clock size={13} className={isExpired ? "text-red-400" : "text-[#D97870]"} />
+              <span className={isExpired ? "text-red-400 font-semibold" : timeLeft <= 60 ? "text-amber-400 font-semibold animate-pulse" : "text-[#A6ACBE]"}>
+                {isExpired ? "Expired" : `Expires in ${formatTime(timeLeft)}`}
+              </span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-2 sm:gap-2.5">
             {otp.map((digit, index) => (
               <input
@@ -201,15 +241,16 @@ function VerifyEmailForm() {
                 value={digit}
                 onChange={(e) => handleOtpChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold font-mono text-white rounded-xl bg-[#232738] border border-white/10 focus:border-[#D97870] focus:ring-2 focus:ring-[#D97870]/20 focus:outline-none transition-all shadow-inner"
+                disabled={isExpired}
+                className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold font-mono text-white rounded-xl bg-[#232738] border border-white/10 focus:border-[#D97870] focus:ring-2 focus:ring-[#D97870]/20 focus:outline-none transition-all shadow-inner disabled:opacity-40 disabled:cursor-not-allowed"
                 autoFocus={index === 0}
               />
             ))}
           </div>
         </div>
 
-        <PrimaryButton type="submit" disabled={loading || fullOtp.length !== 6}>
-          {loading ? "Verifying..." : "Verify Email"}
+        <PrimaryButton type="submit" disabled={loading || fullOtp.length !== 6 || isExpired}>
+          {loading ? "Verifying..." : isExpired ? "Code Expired" : "Verify Email"}
         </PrimaryButton>
       </form>
 
@@ -219,11 +260,11 @@ function VerifyEmailForm() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={cooldown > 0 || resending}
+            disabled={(cooldown > 0 && !isExpired) || resending}
             className="text-[#D97870] font-semibold hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
           >
             {resending && <RefreshCw size={13} className="animate-spin" />}
-            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend Code"}
+            {cooldown > 0 && !isExpired ? `Resend in ${cooldown}s` : "Resend Code"}
           </button>
         </p>
 
