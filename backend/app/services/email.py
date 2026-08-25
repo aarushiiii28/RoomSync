@@ -120,32 +120,34 @@ def send_verification_email(to_email: str, otp_code: str) -> bool:
     # Option 1: Send via Resend
     if api_key:
         try:
-            response = httpx.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "from": settings.EMAIL_FROM,
-                    "to": [to_email],
-                    "subject": subject,
-                    "html": html_content,
-                    "text": text_content,
-                },
-                timeout=10.0,
-            )
+            import resend
 
-            if response.status_code >= 200 and response.status_code < 300:
-                logger.info("Successfully sent verification email via Resend to %s", to_email)
-                return True
-            else:
-                logger.error(
-                    "Resend API error (%s): %s", response.status_code, response.text
-                )
-                return False
+            resend.api_key = api_key
+            params: dict = {
+                "from": settings.EMAIL_FROM,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+            res = resend.Emails.send(params)
+            email_id = (
+                res.get("id")
+                if isinstance(res, dict)
+                else getattr(res, "id", str(res))
+            )
+            logger.info(
+                "Successfully dispatched email via Resend to %s. Resend Email ID: %s",
+                to_email,
+                email_id,
+            )
+            return True
         except Exception as e:
-            logger.error("Failed to deliver email via Resend to %s: %s", to_email, str(e))
+            logger.error(
+                "Resend API error delivering email to %s: %s",
+                to_email,
+                str(e),
+            )
             return False
 
     # Option 2: Send via SMTP (e.g. Gmail App Password)

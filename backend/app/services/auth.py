@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -19,6 +20,8 @@ from app.services.security import (
     verify_password,
 )
 from app.services.email_verification import create_and_send_verification_otp
+
+logger = logging.getLogger("roomsync.auth")
 
 
 def register_user(db: Session, user_data: UserRegister) -> User:
@@ -54,9 +57,8 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     if new_user.email:
         try:
             create_and_send_verification_otp(db=db, user=new_user)
-        except Exception:
-            # User created, verification dispatch attempted
-            pass
+        except Exception as exc:
+            logger.error("Failed to dispatch verification OTP to %s: %s", new_user.email, exc, exc_info=True)
 
     return new_user
 
