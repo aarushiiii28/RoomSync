@@ -11,31 +11,30 @@ function SkeletonCard() {
     <div
       className="rounded-2xl overflow-hidden p-5 animate-pulse"
       style={{
-        background: "#ffffff",
-        border: "1.5px solid #105666",
-        boxShadow: "0 16px 48px rgba(16,86,102,0.12)",
+        background: "rgba(22,25,37,0.9)",
+        border: "1px solid rgba(248,180,200,0.10)",
       }}
     >
       {/* header */}
       <div className="flex items-start gap-4 mb-4">
-        <div className="w-14 h-14 rounded-xl bg-[#105666]/10 flex-shrink-0" />
+        <div className="w-14 h-14 rounded-xl bg-white/5 flex-shrink-0" />
         <div className="flex-1 space-y-2 pt-1">
-          <div className="h-3 rounded bg-[#105666]/15 w-3/4" />
-          <div className="h-2.5 rounded bg-[#105666]/10 w-1/2" />
+          <div className="h-3 rounded bg-white/8 w-3/4" />
+          <div className="h-2.5 rounded bg-white/5 w-1/2" />
         </div>
-        <div className="w-16 h-6 rounded-full bg-[#105666]/10" />
+        <div className="w-16 h-6 rounded-full bg-white/5" />
       </div>
       {/* score block */}
-      <div className="h-[68px] rounded-xl bg-[#105666]/5 mb-4" />
-      <div className="h-[1px] bg-[#105666]/10 mb-4" />
+      <div className="h-[68px] rounded-xl bg-white/4 mb-4" />
+      <div className="h-[1px] bg-white/6 mb-4" />
       {/* bars */}
       {[...Array(7)].map((_, i) => (
         <div key={i} className="mb-2.5 space-y-1">
           <div className="flex justify-between">
-            <div className="h-2 rounded bg-[#105666]/15 w-20" />
-            <div className="h-2 rounded bg-[#105666]/15 w-8" />
+            <div className="h-2 rounded bg-white/8 w-20" />
+            <div className="h-2 rounded bg-white/8 w-8" />
           </div>
-          <div className="h-1 rounded-full bg-[#105666]/10" />
+          <div className="h-1 rounded-full bg-white/5" />
         </div>
       ))}
     </div>
@@ -51,35 +50,32 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
       transition={{ duration: 0.5 }}
       className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center rounded-2xl"
       style={{
-        background: "#ffffff",
-        border: "1.5px solid #105666",
-        boxShadow: "0 16px 48px rgba(16,86,102,0.12)",
+        background: "rgba(22,25,37,0.9)",
+        border: "1px solid rgba(248,180,200,0.12)",
       }}
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
         style={{
-          background: "rgba(16,86,102,0.12)",
-          border: "1.5px solid #105666",
+          background: "rgba(248,180,200,0.08)",
+          border: "1px solid rgba(248,180,200,0.25)",
         }}
       >
-        <Users className="w-6 h-6" style={{ color: "#105666" }} />
+        <Users className="w-6 h-6" style={{ color: "#F8B4C8" }} />
       </div>
-      <h3
-        className="text-[18px] font-bold mb-4"
-        style={{ color: "#105666" }}
-      >
+      <h3 className="text-[18px] font-bold mb-4 text-white">
         No Matches Yet
       </h3>
-
+      <p className="text-[13px] text-zinc-400 max-w-xs leading-relaxed mb-5">
+        We couldn't find compatible roommates yet. Try refreshing or updating your profile.
+      </p>
       <button
         id="empty-refresh-btn"
         onClick={onRefresh}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:bg-[#105666]/5 hover:opacity-90"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:bg-white/5"
         style={{
-          background: "transparent",
-          border: "1.5px solid #105666",
-          color: "#105666",
+          border: "1px solid rgba(248,180,200,0.3)",
+          color: "#F8B4C8",
         }}
       >
         <RefreshCw className="w-3.5 h-3.5" />
@@ -105,6 +101,8 @@ function ErrorState({
     ? "Please log in again to see your recommendations."
     : message ?? "An unexpected error occurred.";
 
+  const accentColor = isUnauthorized ? "#f87171" : "#fbbf24";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -112,43 +110,36 @@ function ErrorState({
       transition={{ duration: 0.5 }}
       className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center rounded-2xl"
       style={{
-        background: "#ffffff",
-        border: "1.5px solid #105666",
-        boxShadow: "0 16px 48px rgba(16,86,102,0.12)",
+        background: "rgba(22,25,37,0.9)",
+        border: `1px solid ${accentColor}25`,
       }}
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
         style={{
-          background: isUnauthorized
-            ? "rgba(220,38,38,0.10)"
-            : "rgba(217,119,6,0.10)",
-          border: `1.5px solid ${isUnauthorized ? "#dc2626" : "#d97706"}`,
+          background: `${accentColor}12`,
+          border: `1.5px solid ${accentColor}40`,
         }}
       >
-        <Icon
-          className="w-6 h-6"
-          style={{ color: isUnauthorized ? "#dc2626" : "#d97706" }}
-        />
+        <Icon className="w-6 h-6" style={{ color: accentColor }} />
       </div>
       <h3
         className="text-[18px] font-bold mb-1"
-        style={{ color: "#105666" }}
+        style={{ color: accentColor }}
       >
         {title}
       </h3>
-      <p className="text-[13px] text-[#5a6e70] max-w-xs leading-relaxed mb-5">
+      <p className="text-[13px] text-zinc-400 max-w-xs leading-relaxed mb-5">
         {hint}
       </p>
       {!isUnauthorized && (
         <button
           id="error-refresh-btn"
           onClick={onRefresh}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:bg-[#105666]/5 hover:opacity-90"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:bg-white/5"
           style={{
-            background: "transparent",
-            border: "1.5px solid #105666",
-            color: "#105666",
+            border: `1px solid ${accentColor}40`,
+            color: accentColor,
           }}
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -175,14 +166,11 @@ export default function RecommendationsGrid({
       {/* ── Section header ── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-
-          <h2
-            className="text-[22px] font-bold tracking-tight text-white"
-          >
+          <h2 className="text-[22px] font-bold tracking-tight text-white">
             Your Matches
           </h2>
           {status === "success" && (
-            <p className="text-[13px] font-medium mt-0.5 text-[#9ec4c9]">
+            <p className="text-[13px] font-medium mt-0.5 text-zinc-400">
               {matches.length} match{matches.length !== 1 ? "es" : ""} from{" "}
               {totalEvaluated} evaluated
             </p>
@@ -194,9 +182,13 @@ export default function RecommendationsGrid({
             id="recommendations-refresh-btn"
             onClick={refetch}
             title="Refresh recommendations"
-            className="p-2.5 rounded-[4px] border border-white/15 bg-white/5 hover:bg-white/10 text-white transition-all flex items-center justify-center"
+            className="p-2.5 rounded-xl hover:bg-white/8 text-zinc-400 hover:text-white transition-all flex items-center justify-center"
+            style={{
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(255,255,255,0.04)",
+            }}
           >
-            <RefreshCw className="w-4 h-4 text-white" />
+            <RefreshCw className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -212,12 +204,12 @@ export default function RecommendationsGrid({
           </>
         )}
 
-        {/* Idle (not yet triggered — show spinner) */}
+        {/* Idle */}
         {status === "idle" && (
           <div className="col-span-full flex items-center justify-center py-20">
             <Loader2
               className="w-8 h-8 animate-spin"
-              style={{ color: "#105666" }}
+              style={{ color: "#F8B4C8" }}
             />
           </div>
         )}
@@ -252,4 +244,3 @@ export default function RecommendationsGrid({
     </section>
   );
 }
-

@@ -16,7 +16,7 @@ export default function DashboardPage() {
       <div
         className="min-h-screen flex flex-col"
         style={{
-          background: "#071818",
+          background: "linear-gradient(135deg, #0f1119 0%, #161925 50%, #1a1530 100%)",
         }}
       >
         <Navbar />
@@ -29,7 +29,7 @@ export default function DashboardPage() {
               <h1 className="text-[22px] sm:text-[24px] font-bold tracking-tight text-white">
                 Welcome back, {firstName}!
               </h1>
-              <p className="text-[13px] sm:text-[14px] font-medium text-[#9ec4c9] mt-1.5">
+              <p className="text-[13px] sm:text-[14px] font-medium text-zinc-400 mt-1.5">
                 Your profile is complete. Here are your roommate matches.
               </p>
             </div>
@@ -37,10 +37,10 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <Link
                 href="/onboarding"
-                className="px-4 py-2 rounded-[4px] text-[13px] font-semibold transition-all hover:bg-white/10 text-white shadow-xs"
+                className="px-4 py-2 rounded-xl text-[13px] font-semibold transition-all hover:bg-white/10 text-zinc-200 hover:text-white"
                 style={{
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.05)",
                 }}
               >
                 Edit Profile
