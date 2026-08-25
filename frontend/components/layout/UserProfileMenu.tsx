@@ -33,121 +33,158 @@ interface EmbeddedCropperProps {
 }
 
 function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [isSaving, setIsSaving] = useState(false);
-
+  // All mutable crop state in refs so draw() always sees latest values immediately
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const zoomRef = useRef(1);
+  const rotationRef = useRef(0);
+  const posRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
-  const size = 200; // 200px square crop canvas
+  // Mirrored React state just for re-render triggers (not used for drawing)
+  const [zoomDisplay, setZoomDisplay] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Draw image on canvas with exact math
-  const draw = useCallback(() => {
+  const SIZE = 220; // canvas pixel size
+
+  const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
-    if (!canvas || !img) return;
+    if (!canvas || !img || !img.complete || img.naturalWidth === 0) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, size, size);
-    ctx.save();
+    const { x, y } = posRef.current;
+    const zoom = zoomRef.current;
+    const rotation = rotationRef.current;
 
-    // Fill dark background
-    ctx.fillStyle = "#0a0c12";
-    ctx.fillRect(0, 0, size, size);
+    ctx.clearRect(0, 0, SIZE, SIZE);
 
-    // Calculate base scale to fully cover the viewport
-    const baseScale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+    // Dark background
+    ctx.fillStyle = "#0d0f17";
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Scale image to cover the full canvas at zoom=1
+    const baseScale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
     const renderW = img.naturalWidth * baseScale * zoom;
     const renderH = img.naturalHeight * baseScale * zoom;
 
-    ctx.translate(size / 2, size / 2);
+    ctx.save();
+    ctx.translate(SIZE / 2 + x, SIZE / 2 + y);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(pos.x, pos.y);
     ctx.drawImage(img, -renderW / 2, -renderH / 2, renderW, renderH);
     ctx.restore();
-  }, [zoom, rotation, pos, size]);
+  }, [SIZE]);
 
-  // Load image
+  // Load image once
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       imgRef.current = img;
-      setZoom(1);
-      setRotation(0);
-      setPos({ x: 0, y: 0 });
-      draw();
+      zoomRef.current = 1;
+      rotationRef.current = 0;
+      posRef.current = { x: 0, y: 0 };
+      setZoomDisplay(1);
+      setImgLoaded(true);
+      redraw();
     };
     img.src = imageSrc;
-  }, [imageSrc, draw]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageSrc]);
 
+  // Redraw whenever image loaded state changes
   useEffect(() => {
-    draw();
-  }, [draw]);
+    if (imgLoaded) redraw();
+  }, [imgLoaded, redraw]);
 
-  // Pointer drag for panning
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  // Pointer drag
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pos.x, y: e.clientY - pos.y });
-  };
+    isDraggingRef.current = true;
+    dragStartRef.current = {
+      x: e.clientX - posRef.current.x,
+      y: e.clientY - posRef.current.y,
+    };
+  }, []);
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
-    setPos({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  };
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDraggingRef.current) return;
+    posRef.current = {
+      x: e.clientX - dragStartRef.current.x,
+      y: e.clientY - dragStartRef.current.y,
+    };
+    redraw();
+  }, [redraw]);
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-    setIsDragging(false);
-  };
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    isDraggingRef.current = false;
+  }, []);
 
-  // Scroll wheel zoom
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  // Wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setZoom((prev) => Math.min(3.5, Math.max(1, prev - e.deltaY * 0.002)));
-  };
+    zoomRef.current = Math.min(3.5, Math.max(1, zoomRef.current - e.deltaY * 0.003));
+    setZoomDisplay(zoomRef.current);
+    redraw();
+  }, [redraw]);
+
+  // Slider zoom
+  const handleZoomSlider = useCallback((value: number) => {
+    zoomRef.current = value;
+    setZoomDisplay(value);
+    redraw();
+  }, [redraw]);
+
+  // Rotate 90°
+  const handleRotate = useCallback(() => {
+    rotationRef.current = (rotationRef.current + 90) % 360;
+    redraw();
+  }, [redraw]);
+
+  // Reset
+  const handleReset = useCallback(() => {
+    zoomRef.current = 1;
+    rotationRef.current = 0;
+    posRef.current = { x: 0, y: 0 };
+    setZoomDisplay(1);
+    redraw();
+  }, [redraw]);
 
   const handleSave = async () => {
     const img = imgRef.current;
     if (!img) return;
-
     setIsSaving(true);
     try {
-      const outputSize = 400;
+      const OUTPUT = 400;
       const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = outputSize;
-      exportCanvas.height = outputSize;
+      exportCanvas.width = OUTPUT;
+      exportCanvas.height = OUTPUT;
       const ctx = exportCanvas.getContext("2d");
-
       if (ctx) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
 
-        const baseScale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
-        const ratio = outputSize / size;
+        const zoom = zoomRef.current;
+        const rotation = rotationRef.current;
+        const { x, y } = posRef.current;
+        const ratio = OUTPUT / SIZE;
+
+        const baseScale = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
         const renderW = img.naturalWidth * baseScale * zoom * ratio;
         const renderH = img.naturalHeight * baseScale * zoom * ratio;
 
-        ctx.translate(outputSize / 2, outputSize / 2);
+        ctx.save();
+        ctx.translate(OUTPUT / 2 + x * ratio, OUTPUT / 2 + y * ratio);
         ctx.rotate((rotation * Math.PI) / 180);
-        ctx.translate(pos.x * ratio, pos.y * ratio);
         ctx.drawImage(img, -renderW / 2, -renderH / 2, renderW, renderH);
+        ctx.restore();
 
-        const dataUrl = exportCanvas.toDataURL("image/jpeg", 0.9);
+        const dataUrl = exportCanvas.toDataURL("image/jpeg", 0.92);
         await onSave(dataUrl);
       }
     } finally {
@@ -180,30 +217,30 @@ function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
       {/* Viewport Canvas + Circular guide */}
       <div className="flex justify-center" onWheel={handleWheel}>
         <div
-          className="relative rounded-2xl overflow-hidden bg-black select-none touch-none cursor-grab active:cursor-grabbing border border-white/10 shadow-inner"
-          style={{ width: `${size}px`, height: `${size}px` }}
+          className="relative overflow-hidden bg-black select-none touch-none cursor-grab active:cursor-grabbing rounded-xl border border-white/10 shadow-inner"
+          style={{ width: `${SIZE}px`, height: `${SIZE}px` }}
         >
           <canvas
             ref={canvasRef}
-            width={size}
-            height={size}
+            width={SIZE}
+            height={SIZE}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
-            className="w-full h-full block"
+            style={{ display: "block", width: `${SIZE}px`, height: `${SIZE}px` }}
           />
 
           {/* Circular mask overlay */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
             <div
-              style={{ width: `${size - 16}px`, height: `${size - 16}px` }}
-              className="rounded-full border-2 border-[#F8B4C8] shadow-[0_0_0_9999px_rgba(10,12,18,0.7)]"
+              style={{ width: `${SIZE - 20}px`, height: `${SIZE - 20}px` }}
+              className="rounded-full border-2 border-[#F8B4C8] shadow-[0_0_0_9999px_rgba(10,12,18,0.75)]"
             />
           </div>
 
           <div className="absolute bottom-1.5 left-0 right-0 flex justify-center pointer-events-none">
-            <span className="px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-[9px] text-zinc-300 flex items-center gap-0.5">
+            <span className="px-1.5 py-0.5 rounded-full bg-black/60 text-[9px] text-zinc-300 flex items-center gap-0.5">
               <Move size={9} /> Drag to position
             </span>
           </div>
@@ -214,7 +251,7 @@ function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
       <div className="flex items-center gap-2 px-1">
         <button
           type="button"
-          onClick={() => setZoom((prev) => Math.max(1, prev - 0.2))}
+          onClick={() => handleZoomSlider(Math.max(1, zoomDisplay - 0.2))}
           className="text-zinc-400 hover:text-white transition cursor-pointer p-0.5"
           title="Zoom Out"
         >
@@ -223,15 +260,15 @@ function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
         <input
           type="range"
           min="1"
-          max="3"
+          max="3.5"
           step="0.05"
-          value={zoom}
-          onChange={(e) => setZoom(parseFloat(e.target.value))}
-          className="flex-1 accent-[#F8B4C8] h-1.5 bg-white/20 rounded-lg cursor-pointer"
+          value={zoomDisplay}
+          onChange={(e) => handleZoomSlider(parseFloat(e.target.value))}
+          className="flex-1 accent-[#F8B4C8] h-1.5 rounded-lg cursor-pointer"
         />
         <button
           type="button"
-          onClick={() => setZoom((prev) => Math.min(3, prev + 0.2))}
+          onClick={() => handleZoomSlider(Math.min(3.5, zoomDisplay + 0.2))}
           className="text-zinc-400 hover:text-white transition cursor-pointer p-0.5"
           title="Zoom In"
         >
@@ -240,7 +277,7 @@ function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
 
         <button
           type="button"
-          onClick={() => setRotation((prev) => (prev + 90) % 360)}
+          onClick={handleRotate}
           className="p-1 rounded-md bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white transition cursor-pointer"
           title="Rotate 90°"
         >
@@ -252,11 +289,7 @@ function EmbeddedCropper({ imageSrc, onSave, onCancel }: EmbeddedCropperProps) {
       <div className="flex items-center justify-between pt-2 border-t border-white/10">
         <button
           type="button"
-          onClick={() => {
-            setZoom(1);
-            setRotation(0);
-            setPos({ x: 0, y: 0 });
-          }}
+          onClick={handleReset}
           className="text-[11px] text-zinc-400 hover:text-white underline cursor-pointer"
         >
           Reset
