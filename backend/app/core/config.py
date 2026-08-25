@@ -17,20 +17,13 @@ class Settings(BaseSettings):
     # Debug
     DEBUG: bool = False
 
-    # Email & OTP
+    # Email & OTP (Resend)
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "RoomSync <onboarding@resend.dev>"
     FRONTEND_URL: str = "http://localhost:3000"
     OTP_EXPIRY_MINUTES: int = 5
     OTP_MAX_ATTEMPTS: int = 5
     OTP_RESEND_COOLDOWN_SECONDS: int = 60
-
-    # Optional SMTP (e.g. Gmail SMTP)
-    SMTP_HOST: str = ""
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_TLS: bool = True
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_PATH) if _ENV_PATH.exists() else ".env",

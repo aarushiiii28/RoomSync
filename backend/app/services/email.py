@@ -1,9 +1,5 @@
 import logging
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Optional
-import httpx
 
 from app.core.config import settings
 
@@ -12,11 +8,12 @@ logger = logging.getLogger("roomsync.email")
 
 def send_verification_email(to_email: str, otp_code: str) -> bool:
     """
-    Send a professional 6-digit OTP verification email to the user via Resend or SMTP.
+    Send a professional 6-digit OTP verification email to the user via Resend.
 
-    - If RESEND_API_KEY is configured, sends via Resend.
-    - If SMTP_USER / SMTP_HOST is configured, sends via SMTP (e.g. Gmail SMTP).
-    - Otherwise logs the OTP safely in development.
+    - If RESEND_API_KEY is configured, sends via official Resend Python SDK.
+    - If RESEND_API_KEY is not configured (e.g. offline dev/testing), logs simulated dispatch safely.
+    - Returns True if email was successfully accepted by Resend (or simulated in offline dev).
+    - Returns False if Resend rejected delivery.
     """
     subject = "Verify your RoomSync email"
     html_content = f"""
@@ -117,70 +114,40 @@ def send_verification_email(to_email: str, otp_code: str) -> bool:
 
     api_key = settings.RESEND_API_KEY.strip() if settings.RESEND_API_KEY else ""
 
-    # Option 1: Send via Resend
-    if api_key:
-        try:
-            import resend
+    if not api_key:
+        logger.info(
+            "[DEV MODE] Resend API key not set. Simulated sending OTP email to %s",
+            to_email,
+        )
+        return True
 
-            resend.api_key = api_key
-            params: dict = {
-                "from": settings.EMAIL_FROM,
-                "to": [to_email],
-                "subject": subject,
-                "html": html_content,
-                "text": text_content,
-            }
-            res = resend.Emails.send(params)
-            email_id = (
-                res.get("id")
-                if isinstance(res, dict)
-                else getattr(res, "id", str(res))
-            )
-            logger.info(
-                "Successfully dispatched email via Resend to %s. Resend Email ID: %s",
-                to_email,
-                email_id,
-            )
-            return True
-        except Exception as e:
-            logger.error(
-                "Resend API error delivering email to %s: %s",
-                to_email,
-                str(e),
-            )
-            return False
+    try:
+        import resend
 
-    # Option 2: Send via SMTP (e.g. Gmail App Password)
-    if settings.SMTP_HOST or settings.SMTP_USER:
-        try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = settings.SMTP_USER or settings.EMAIL_FROM
-            msg["To"] = to_email
-
-            part1 = MIMEText(text_content, "plain")
-            part2 = MIMEText(html_content, "html")
-            msg.attach(part1)
-            msg.attach(part2)
-
-            host = settings.SMTP_HOST or "smtp.gmail.com"
-            port = settings.SMTP_PORT or 587
-            with smtplib.SMTP(host, port, timeout=10) as server:
-                if settings.SMTP_TLS:
-                    server.starttls()
-                if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.sendmail(msg["From"], [to_email], msg.as_string())
-            logger.info("Successfully sent email via SMTP to %s", to_email)
-            return True
-        except Exception as smtp_err:
-            logger.error("Failed to deliver email via SMTP to %s: %s", to_email, str(smtp_err))
-            return False
-
-    # Option 3: Development Mode Simulation
-    logger.info(
-        "[DEV MODE] Email credentials not set. Simulated sending OTP code [%s] to %s",
-        otp_code,
-        to_email,
-    )
-    return True
+        resend.api_key = api_key
+        params: dict = {
+            "from": settings.EMAIL_FROM,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content,
+        }
+        res = resend.Emails.send(params)
+        email_id = (
+            res.get("id")
+            if isinstance(res, dict)
+            else getattr(res, "id", str(res))
+        )
+        logger.info(
+            "Successfully dispatched email via Resend to %s. Resend Email ID: %s",
+            to_email,
+            email_id,
+        )
+        return True
+    except Exception as e:
+        logger.error(
+            "Resend API error delivering email to %s: %s",
+            to_email,
+            str(e),
+        )
+        return False

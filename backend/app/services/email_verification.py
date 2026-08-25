@@ -76,8 +76,11 @@ def create_and_send_verification_otp(db: Session, user: User) -> None:
     db.add(verification)
     db.commit()
 
+    sent = True
     if user.email:
-        send_verification_email(to_email=user.email, otp_code=plain_otp)
+        sent = send_verification_email(to_email=user.email, otp_code=plain_otp)
+
+    return sent
 
 
 def _to_utc(dt: datetime) -> datetime:
@@ -191,6 +194,8 @@ def resend_verification_otp(db: Session, email_or_username: str) -> str:
             raise ValueError(f"Please wait {remaining} second(s) before requesting a new code.")
 
     # Generate and send new OTP
-    create_and_send_verification_otp(db=db, user=user)
+    sent = create_and_send_verification_otp(db=db, user=user)
+    if not sent:
+        raise ValueError("We couldn't send the verification email right now. Please try again.")
 
     return "A new verification code has been sent to your email."

@@ -4,6 +4,7 @@ Unit & Integration Tests for Email Verification / 6-Digit OTP System.
 
 import sys
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -115,8 +116,14 @@ class TestEmailVerificationSystem(unittest.TestCase):
 
     def setUp(self):
         self.db = self.TestingSessionLocal()
+        self.patcher = patch(
+            "app.services.email_verification.send_verification_email",
+            return_value=True,
+        )
+        self.mock_send = self.patcher.start()
 
     def tearDown(self):
+        self.patcher.stop()
         self.db.query(EmailVerification).delete()
         self.db.query(RefreshToken).delete()
         self.db.query(User).delete()
@@ -480,6 +487,24 @@ class TestEmailVerificationSystem(unittest.TestCase):
         # User is now verified in DB
         self.db.refresh(user)
         self.assertTrue(user.email_verified)
+
+    # 16. Failed Resend delivery raises clean application error
+    def test_16_failed_resend_delivery_raises_application_error(self):
+        user = User(
+            id=uuid4(),
+            username="nina_test",
+            email="nina@example.com",
+            password_hash=hash_password("Password123!"),
+            email_verified=False,
+        )
+        self.db.add(user)
+        self.db.commit()
+
+        # Temporarily configure send_verification_email to simulate a failed Resend delivery
+        with patch("app.services.email_verification.send_verification_email", return_value=False):
+            with self.assertRaises(ValueError) as ctx:
+                resend_verification_otp(self.db, "nina@example.com")
+            self.assertIn("couldn't send the verification email", str(ctx.exception).lower())
 
 
 if __name__ == "__main__":
