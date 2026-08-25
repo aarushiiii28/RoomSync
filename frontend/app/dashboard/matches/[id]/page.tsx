@@ -90,17 +90,6 @@ export default function MatchDetailPage() {
         <Navbar />
 
         <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-12 pb-16">
-          {/* Back Button */}
-          <div className="mb-6">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold text-white/90 bg-white/10 hover:bg-white/15 border border-white/15 backdrop-blur-md transition-all group cursor-pointer"
-            >
-              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Matches</span>
-            </Link>
-          </div>
-
           {/* Loading State */}
           {loading && (
             <div
@@ -160,7 +149,16 @@ export default function MatchDetailPage() {
                 className="p-8 sm:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative"
                 style={{ background: "#494F66" }}
               >
-                <div className="flex items-center gap-5 sm:gap-6 min-w-0">
+                <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
+                  {/* Clean Back Arrow without box */}
+                  <Link
+                    href="/dashboard"
+                    className="text-white/80 hover:text-white transition-all -ml-1 sm:-ml-2 p-1.5 flex items-center justify-center cursor-pointer group shrink-0"
+                    title="Back to Matches"
+                  >
+                    <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
+                  </Link>
+
                   {/* Circular Profile Picture */}
                   <div
                     className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center shadow-lg"
