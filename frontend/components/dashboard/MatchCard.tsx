@@ -125,7 +125,7 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Prediction badge with equal fixed width w-20 */}
           <div
-            className="w-20 flex items-center justify-center gap-1.5 py-1 rounded-full text-[11px] font-bold"
+            className="w-20 h-7 py-0.5 flex items-center justify-center gap-1.5 rounded-full text-[11px] font-bold"
             style={{
               background: cfg.bg,
               border: `1.5px solid ${cfg.border}`,

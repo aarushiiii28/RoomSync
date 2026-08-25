@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Loader2,
-  Sparkles,
   MapPin,
   Briefcase,
   User as UserIcon,
@@ -32,15 +31,8 @@ const SIGNAL_LABELS: Record<string, string> = {
   behavioral_alignment_score: "Behavioral & Chemistry Alignment",
 };
 
-const SIGNAL_COLORS: Record<string, string> = {
-  sleep_compatibility: "#494F66",
-  work_compatibility: "#3D2A62",
-  cleanliness_compatibility: "#7c3aed",
-  social_compatibility: "#D97870",
-  privacy_compatibility: "#059669",
-  routine_compatibility: "#d97706",
-  behavioral_alignment_score: "#0d9488",
-};
+// All bars use the cohesive pink brand color
+const PINK_BAR_COLOR = "#D97870";
 
 export default function MatchDetailPage() {
   const params = useParams();
@@ -77,7 +69,6 @@ export default function MatchDetailPage() {
 
   const pred = candidate?.prediction as "High" | "Medium" | "Low";
   const cfg = candidate ? PREDICTION_CONFIG[pred] ?? PREDICTION_CONFIG.Medium : PREDICTION_CONFIG.Medium;
-  const confidencePct = candidate ? Math.round(candidate.confidence * 100) : 0;
 
   const displayName = candidate
     ? [candidate.first_name, candidate.last_name].filter(Boolean).join(" ") || "Roommate Match"
@@ -228,10 +219,10 @@ export default function MatchDetailPage() {
                   </div>
                 </div>
 
-                {/* Equal Length Badge */}
+                {/* Equal Length Badge (Sleek vertical height, only "High" / "Medium" / "Low") */}
                 <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
                   <div
-                    className="w-24 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-[12px] font-bold shadow-xs"
+                    className="w-20 h-7 py-0.5 flex items-center justify-center gap-1.5 rounded-full text-[11px] font-bold shadow-xs"
                     style={{
                       background: cfg.bg,
                       border: `1.5px solid ${cfg.border}`,
@@ -239,81 +230,38 @@ export default function MatchDetailPage() {
                     }}
                   >
                     <motion.div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                       animate={{ opacity: [1, 0.3, 1] }}
                       transition={{ duration: 1.8, repeat: Infinity }}
                       style={{ background: cfg.dot }}
                     />
-                    <span>{pred} Match</span>
+                    <span>{pred}</span>
                   </div>
                 </div>
               </div>
 
               {/* ── Main Breakdown Content ── */}
-              <div className="p-7 sm:p-9 lg:p-11 space-y-8">
-                {/* Confidence & Rule Overview Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* ML Confidence */}
-                  <div
-                    className="p-6 rounded-2xl flex items-center justify-between shadow-sm"
-                    style={{
-                      background: "#ffffff",
-                      border: "1.5px solid #EBD6CF",
-                    }}
+              <div className="p-7 sm:p-9 lg:p-11 space-y-6">
+                {/* Compatibility Score (On existing pink background, left-aligned, no white box, no Rule badge) */}
+                <div className="flex flex-col items-start gap-0.5">
+                  <p
+                    className="text-[12px] font-bold uppercase tracking-[0.2em]"
+                    style={{ color: "#8b92a5" }}
                   >
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#8b92a5" }}>
-                        ML Match Confidence
-                      </p>
-                      <p className="text-3xl sm:text-4xl font-bold mt-1.5" style={{ color: "#2D3246" }}>
-                        {confidencePct}
-                        <span className="text-lg font-semibold ml-0.5" style={{ color: "#8b92a5" }}>
-                          %
-                        </span>
-                      </p>
-                    </div>
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                      style={{
-                        background: cfg.bg,
-                        border: `1.5px solid ${cfg.border}`,
-                        color: cfg.text,
-                      }}
-                    >
-                      <Sparkles size={24} />
-                    </div>
-                  </div>
-
-                  {/* Rule-Based Alignment */}
-                  <div
-                    className="p-6 rounded-2xl flex items-center justify-between shadow-sm"
-                    style={{
-                      background: "#ffffff",
-                      border: "1.5px solid #EBD6CF",
-                    }}
+                    Compatibility
+                  </p>
+                  <p
+                    className="text-4xl sm:text-5xl font-bold font-sans tracking-tight"
+                    style={{ color: "#2D3246" }}
                   >
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#8b92a5" }}>
-                        Rule-Based Alignment Score
-                      </p>
-                      <p className="text-3xl sm:text-4xl font-bold mt-1.5" style={{ color: "#2D3246" }}>
-                        {Math.round(candidate.rule_based_explainability.rule_score)}
-                        <span className="text-lg font-semibold ml-0.5" style={{ color: "#8b92a5" }}>
-                          %
-                        </span>
-                      </p>
-                    </div>
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                      style={{
-                        background: "#F6D7CF",
-                        border: "1.5px solid #E5ADA2",
-                        color: "#D97870",
-                      }}
+                    {Math.round(candidate.rule_based_explainability.rule_score)}
+                    <span
+                      className="text-2xl sm:text-3xl font-semibold ml-1"
+                      style={{ color: "#8b92a5" }}
                     >
-                      <span className="text-base font-bold">Rule</span>
-                    </div>
-                  </div>
+                      %
+                    </span>
+                  </p>
                 </div>
 
                 {/* Sub-dimensional Compatibility Signals */}
@@ -324,21 +272,17 @@ export default function MatchDetailPage() {
                     border: "1.5px solid #EBD6CF",
                   }}
                 >
-                  <div className="border-b pb-4" style={{ borderColor: "#EBD6CF" }}>
+                  <div className="border-b pb-3" style={{ borderColor: "#EBD6CF" }}>
                     <h2 className="font-sans text-xl font-bold" style={{ color: "#2D3246" }}>
                       Compatibility Signals Breakdown
                     </h2>
-                    <p className="text-[13px] mt-1 font-medium" style={{ color: "#494F66" }}>
-                      Detailed dimension-by-dimension alignment evaluated across lifestyle, habits, and preferences.
-                    </p>
                   </div>
 
-                  <div className="space-y-4 pt-2">
+                  <div className="space-y-4 pt-1">
                     {signalKeys.map((key, i) => {
                       const val = candidate.feature_signals[key];
                       if (val === undefined) return null;
                       const pct = Math.round(val);
-                      const color = SIGNAL_COLORS[key] ?? "#494F66";
 
                       return (
                         <div key={key} className="space-y-1.5">
@@ -346,7 +290,10 @@ export default function MatchDetailPage() {
                             <span className="text-[13px] font-semibold" style={{ color: "#2D3246" }}>
                               {SIGNAL_LABELS[key] ?? key}
                             </span>
-                            <span className="text-[13px] font-bold tabular-nums" style={{ color }}>
+                            <span
+                              className="text-[13px] font-bold tabular-nums"
+                              style={{ color: PINK_BAR_COLOR }}
+                            >
                               {pct}%
                             </span>
                           </div>
@@ -360,8 +307,8 @@ export default function MatchDetailPage() {
                               animate={{ width: `${pct}%` }}
                               transition={{ duration: 0.8, delay: 0.05 * i, ease: "easeOut" }}
                               style={{
-                                background: `linear-gradient(90deg, ${color}88, ${color})`,
-                                boxShadow: `0 0 6px ${color}40`,
+                                background: `linear-gradient(90deg, #F6D7CF, ${PINK_BAR_COLOR})`,
+                                boxShadow: `0 0 6px ${PINK_BAR_COLOR}40`,
                               }}
                             />
                           </div>
