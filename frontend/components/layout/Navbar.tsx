@@ -106,77 +106,29 @@ export default function Navbar() {
         <div className="flex flex-1 justify-end items-center gap-3">
           {!loading && isAuthenticated ? (
             <>
-              {profileComplete ? (
-                /* Authenticated + Profile Complete */
+              {!profileComplete && (
+                /* Authenticated + Incomplete Profile */
                 <Link
-                  href="/dashboard"
+                  href="/onboarding"
                   className="
                     h-9
                     px-5
                     rounded-[4px]
-                    border
-                    border-white/15
-                    text-white
+                    font-bold
                     text-[13px]
-                    font-medium
+                    text-[#161925]
                     whitespace-nowrap
+                    bg-[#F8B4C8]
                     transition
                     duration-200
-                    hover:bg-white/10
+                    hover:opacity-95
+                    hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
                     flex
                     items-center
                   "
                 >
-                  Discover
+                  Complete Profile
                 </Link>
-              ) : (
-                /* Authenticated + Incomplete Profile */
-                <>
-                  <Link
-                    href="/onboarding?notice=complete_first"
-                    className="
-                      h-9
-                      px-4
-                      rounded-[4px]
-                      border
-                      border-white/10
-                      text-zinc-400
-                      text-[13px]
-                      font-medium
-                      whitespace-nowrap
-                      transition
-                      duration-200
-                      hover:bg-white/5
-                      hover:text-zinc-200
-                      flex
-                      items-center
-                    "
-                  >
-                    Discover
-                  </Link>
-
-                  <Link
-                    href="/onboarding"
-                    className="
-                      h-9
-                      px-5
-                      rounded-[4px]
-                      font-bold
-                      text-[13px]
-                      text-[#161925]
-                      whitespace-nowrap
-                      bg-[#F8B4C8]
-                      transition
-                      duration-200
-                      hover:opacity-95
-                      hover:shadow-[0_6px_20px_rgba(248,180,200,0.4)]
-                      flex
-                      items-center
-                    "
-                  >
-                    Complete Profile
-                  </Link>
-                </>
               )}
 
               {/* Avatar menu at the rightmost corner */}

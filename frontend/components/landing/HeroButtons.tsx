@@ -39,7 +39,7 @@ export default function HeroButtons() {
           shadow-[0_6px_24px_rgba(248,180,200,0.35)]
         "
       >
-        Start Matching Now
+        Explore Your Matches
       </button>
     </div>
   );
