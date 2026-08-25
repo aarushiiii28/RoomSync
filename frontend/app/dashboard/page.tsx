@@ -15,45 +15,51 @@ export default function DashboardPage() {
     <DashboardGuard>
       <div
         className="min-h-screen flex flex-col"
-        style={{
-          background: "linear-gradient(135deg, #0f1119 0%, #161925 50%, #1a1530 100%)",
-        }}
+        style={{ background: "#545B73" }}
       >
         <Navbar />
 
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-12">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-12">
 
-          {/* ── Welcome header ── */}
-          <div className="w-full mb-10 flex flex-col sm:flex-row items-start sm:items-baseline justify-between gap-4">
-            <div>
-              <h1 className="text-[22px] sm:text-[24px] font-bold tracking-tight text-white">
-                Welcome back, {firstName}!
-              </h1>
-              <p className="text-[13px] sm:text-[14px] font-medium text-zinc-400 mt-1.5">
-                Your profile is complete. Here are your roommate matches.
-              </p>
-            </div>
+          {/* ── Outer card wrapping the whole page content ── */}
+          <div
+            className="rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: "#F8ECE8" }}
+          >
+            {/* ── Welcome header bar ── */}
+            <div
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-8 py-6"
+              style={{ background: "#494F66" }}
+            >
+              <div>
+                <h1 className="text-[22px] sm:text-[24px] font-bold tracking-tight text-white font-serif">
+                  Welcome back, {firstName}!
+                </h1>
+                <p className="text-[13px] font-medium mt-1" style={{ color: "#A6ACBE" }}>
+                  Your profile is complete. Here are your roommate matches.
+                </p>
+              </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
               <Link
                 href="/onboarding"
-                className="px-4 py-2 rounded-xl text-[13px] font-semibold transition-all hover:bg-white/10 text-zinc-200 hover:text-white"
+                className="px-4 py-2 rounded-lg text-[13px] font-semibold transition-all hover:bg-white/10 text-white flex-shrink-0"
                 style={{
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  background: "rgba(255,255,255,0.08)",
                 }}
               >
                 Edit Profile
               </Link>
             </div>
-          </div>
 
-          {/* ── ML Recommendations ── */}
-          <RecommendationsGrid topN={10} />
+            {/* ── Match grid content area ── */}
+            <div className="p-7 sm:p-9 lg:p-11">
+              <RecommendationsGrid topN={10} />
+            </div>
+          </div>
 
         </main>
       </div>
     </DashboardGuard>
   );
 }
-
