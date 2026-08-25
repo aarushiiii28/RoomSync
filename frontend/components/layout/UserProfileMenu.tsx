@@ -6,16 +6,19 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
 import {
-  LayoutDashboard,
+  Compass,
   UserCheck,
   Sparkles,
   LogOut,
+  Pencil,
 } from "lucide-react";
+import ProfilePhotoModal from "./ProfilePhotoModal";
 
 export default function UserProfileMenu() {
   const router = useRouter();
-  const { isAuthenticated, profileComplete, user, loading } = useAuth();
+  const { isAuthenticated, profileComplete, user, loading, updateProfilePhoto } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -74,97 +77,192 @@ export default function UserProfileMenu() {
   };
 
   return (
-    <div ref={menuRef} className="relative select-none">
-      {/* Profile Avatar Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="User Profile Menu"
-        aria-expanded={isOpen}
-        className="
-          w-9
-          h-9
-          rounded-full
-          bg-[#161925]
-          border border-white/25
-          text-white
-          flex items-center justify-center
-          font-bold
-          text-[12px]
-          shadow-md
-          hover:border-[#F8B4C8]/80
-          hover:shadow-[0_0_16px_rgba(248,180,200,0.35)]
-          hover:scale-105
-          active:scale-95
-          transition-all
-          duration-150
-          cursor-pointer
-          focus:outline-none
-          focus:ring-2
-          focus:ring-[#F8B4C8]/50
-        "
-      >
-        {initials}
-      </button>
-
-      {/* Popover Dropdown Menu (Opens downwards) */}
-      {isOpen && (
-        <div
-          role="menu"
+    <>
+      <div ref={menuRef} className="relative select-none">
+        {/* Profile Avatar Button */}
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label="User Profile Menu"
+          aria-expanded={isOpen}
           className="
-            absolute
-            top-11
-            right-0
-            w-64
-            rounded-2xl
-            bg-[#161925]/95
-            border border-white/10
-            shadow-[0_16px_48px_rgba(0,0,0,0.7)]
-            p-3
-            backdrop-blur-xl
-            animate-in fade-in slide-in-from-top-2
+            w-9
+            h-9
+            rounded-full
+            bg-[#161925]
+            border border-white/25
+            text-white
+            flex items-center justify-center
+            font-bold
+            text-[12px]
+            shadow-md
+            overflow-hidden
+            hover:border-[#F8B4C8]/80
+            hover:shadow-[0_0_16px_rgba(248,180,200,0.35)]
+            hover:scale-105
+            active:scale-95
+            transition-all
             duration-150
-            z-50
+            cursor-pointer
+            focus:outline-none
+            focus:ring-2
+            focus:ring-[#F8B4C8]/50
           "
         >
-          {/* User Info Header */}
-          <div className="p-2 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#F8B4C8] flex items-center justify-center text-[#161925] font-bold text-sm shadow-md shrink-0">
-              {initials}
-            </div>
+          {user?.profilePhotoUrl ? (
+            <img
+              src={user.profilePhotoUrl}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initials
+          )}
+        </button>
 
-            <div className="overflow-hidden min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-white truncate">
-                {displayName}
-              </p>
-            </div>
-          </div>
-
-          <div className="h-[1px] bg-white/10 my-2" />
-
-          {/* Menu Actions */}
-          <div className="space-y-1">
-            {profileComplete ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setIsOpen(false)}
+        {/* Popover Dropdown Menu (Opens downwards) */}
+        {isOpen && (
+          <div
+            role="menu"
+            className="
+              absolute
+              top-11
+              right-0
+              w-64
+              rounded-2xl
+              bg-[#161925]/95
+              border border-white/10
+              shadow-[0_16px_48px_rgba(0,0,0,0.7)]
+              p-3
+              backdrop-blur-xl
+              animate-in fade-in slide-in-from-top-2
+              duration-150
+              z-50
+            "
+          >
+            {/* User Info Header with Avatar & Edit Pencil */}
+            <div className="p-2 flex items-center gap-3">
+              <div className="relative group/avatar flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsPhotoModalOpen(true);
+                  }}
+                  title="Change profile picture"
                   className="
-                    flex items-center gap-2.5
-                    px-3 py-2.5
-                    rounded-xl
-                    text-[13px]
-                    font-medium
-                    text-zinc-200
-                    hover:bg-white/10
-                    hover:text-white
-                    transition-colors
+                    w-11 h-11
+                    rounded-full
+                    bg-[#F8B4C8]
+                    text-[#161925]
+                    flex items-center justify-center
+                    font-bold text-sm
+                    shadow-md
+                    overflow-hidden
+                    border border-white/15
+                    hover:ring-2 hover:ring-[#F8B4C8]
+                    transition-all duration-150
+                    cursor-pointer
                   "
                 >
-                  <LayoutDashboard size={16} className="text-[#F8B4C8]" />
-                  <span>Dashboard</span>
-                </Link>
+                  {user?.profilePhotoUrl ? (
+                    <img
+                      src={user.profilePhotoUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </button>
 
+                {/* Edit Pencil Icon Badge */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    setIsPhotoModalOpen(true);
+                  }}
+                  title="Change profile picture"
+                  aria-label="Change profile picture"
+                  className="
+                    absolute -bottom-1 -right-1
+                    w-5 h-5
+                    rounded-full
+                    bg-[#161925]
+                    border border-white/20
+                    text-[#F8B4C8]
+                    hover:text-white
+                    hover:bg-[#F8B4C8]/40
+                    hover:scale-110
+                    flex items-center justify-center
+                    shadow-md
+                    transition-all duration-150
+                    cursor-pointer
+                  "
+                >
+                  <Pencil size={10} />
+                </button>
+              </div>
+
+              <div className="overflow-hidden min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-white truncate">
+                  {displayName}
+                </p>
+                {user?.email && (
+                  <p className="text-[11px] text-zinc-400 truncate">
+                    {user.email}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="h-[1px] bg-white/10 my-2" />
+
+            {/* Menu Actions */}
+            <div className="space-y-1">
+              {profileComplete ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="
+                      flex items-center gap-2.5
+                      px-3 py-2.5
+                      rounded-xl
+                      text-[13px]
+                      font-medium
+                      text-zinc-200
+                      hover:bg-white/10
+                      hover:text-white
+                      transition-colors
+                    "
+                  >
+                    <Compass size={16} className="text-[#F8B4C8]" />
+                    <span>Discover</span>
+                  </Link>
+
+                  <Link
+                    href="/onboarding"
+                    onClick={() => setIsOpen(false)}
+                    className="
+                      flex items-center gap-2.5
+                      px-3 py-2.5
+                      rounded-xl
+                      text-[13px]
+                      font-medium
+                      text-zinc-200
+                      hover:bg-white/10
+                      hover:text-white
+                      transition-colors
+                    "
+                  >
+                    <UserCheck size={16} className="text-[#F8B4C8]" />
+                    <span>Edit Profile</span>
+                  </Link>
+                </>
+              ) : (
                 <Link
                   href="/onboarding"
                   onClick={() => setIsOpen(false)}
@@ -174,61 +272,52 @@ export default function UserProfileMenu() {
                     rounded-xl
                     text-[13px]
                     font-medium
-                    text-zinc-200
-                    hover:bg-white/10
-                    hover:text-white
+                    text-white
+                    bg-[#F8B4C8]/15
+                    border border-[#F8B4C8]/30
+                    hover:bg-[#F8B4C8]/25
                     transition-colors
                   "
                 >
-                  <UserCheck size={16} className="text-[#F8B4C8]" />
-                  <span>Edit Profile</span>
+                  <Sparkles size={16} className="text-[#F8B4C8]" />
+                  <span>Complete Profile</span>
                 </Link>
-              </>
-            ) : (
-              <Link
-                href="/onboarding"
-                onClick={() => setIsOpen(false)}
+              )}
+
+              <button
+                type="button"
+                onClick={handleLogout}
                 className="
+                  w-full
                   flex items-center gap-2.5
                   px-3 py-2.5
                   rounded-xl
                   text-[13px]
                   font-medium
-                  text-white
-                  bg-[#F8B4C8]/15
-                  border border-[#F8B4C8]/30
-                  hover:bg-[#F8B4C8]/25
+                  text-red-400
+                  hover:bg-red-500/10
+                  hover:text-red-300
                   transition-colors
+                  cursor-pointer
                 "
               >
-                <Sparkles size={16} className="text-[#F8B4C8]" />
-                <span>Complete Profile</span>
-              </Link>
-            )}
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="
-                w-full
-                flex items-center gap-2.5
-                px-3 py-2.5
-                rounded-xl
-                text-[13px]
-                font-medium
-                text-red-400
-                hover:bg-red-500/10
-                hover:text-red-300
-                transition-colors
-                cursor-pointer
-              "
-            >
-              <LogOut size={16} />
-              <span>Log Out</span>
-            </button>
+                <LogOut size={16} />
+                <span>Log Out</span>
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      {/* Profile Photo Modal */}
+      <ProfilePhotoModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        currentPhotoUrl={user?.profilePhotoUrl || null}
+        initials={initials}
+        onSavePhoto={updateProfilePhoto}
+      />
+    </>
   );
 }
+

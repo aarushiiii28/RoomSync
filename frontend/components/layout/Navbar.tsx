@@ -127,7 +127,7 @@ export default function Navbar() {
                     items-center
                   "
                 >
-                  Dashboard
+                  Discover
                 </Link>
               ) : (
                 /* Authenticated + Incomplete Profile */
@@ -152,7 +152,7 @@ export default function Navbar() {
                       items-center
                     "
                   >
-                    Dashboard
+                    Discover
                   </Link>
 
                   <Link

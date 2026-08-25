@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { tokenStorage, AUTH_CHANGE_EVENT } from "@/services/token";
-import { getMyOnboarding } from "@/services/onboarding";
+import { getMyOnboarding, savePartialOnboarding } from "@/services/onboarding";
 import { getCurrentUser } from "@/services/auth";
 
 export interface UserProfileInfo {
@@ -11,6 +11,7 @@ export interface UserProfileInfo {
   firstName?: string;
   lastName?: string;
   email?: string | null;
+  profilePhotoUrl?: string | null;
 }
 
 export interface AuthContextType {
@@ -19,6 +20,7 @@ export interface AuthContextType {
   user: UserProfileInfo | null;
   loading: boolean;
   refetch: () => Promise<void>;
+  updateProfilePhoto: (photoUrl: string | null) => Promise<void>;
 }
 
 const defaultAuthState: AuthContextType = {
@@ -27,6 +29,7 @@ const defaultAuthState: AuthContextType = {
   user: null,
   loading: true,
   refetch: async () => {},
+  updateProfilePhoto: async () => {},
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthState);
@@ -67,12 +70,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // ignore
         }
 
+        const cachedPhoto =
+          typeof window !== "undefined" && userId
+            ? localStorage.getItem(`roomsync_avatar_${userId}`)
+            : null;
+        const photoUrl = onboardingData.profile?.profile_photo_url || cachedPhoto || null;
+        if (photoUrl && typeof window !== "undefined" && userId) {
+          try {
+            localStorage.setItem(`roomsync_avatar_${userId}`, photoUrl);
+          } catch {
+            // storage quota fallback
+          }
+        }
+
         setUser({
           id: userId,
           username,
           email: userEmail,
           firstName: onboardingData.profile?.first_name || "",
           lastName: onboardingData.profile?.last_name || "",
+          profilePhotoUrl: photoUrl,
         });
       } catch (onboardingErr: unknown) {
         const errObj = onboardingErr as { response?: { status?: number } };
@@ -82,10 +99,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           try {
             const userAccount = await getCurrentUser();
+            const cachedPhoto =
+              typeof window !== "undefined" && userAccount.id
+                ? localStorage.getItem(`roomsync_avatar_${userAccount.id}`)
+                : null;
             setUser({
               id: userAccount.id,
               username: userAccount.username,
               email: userAccount.email,
+              profilePhotoUrl: cachedPhoto || null,
             });
           } catch {
             setUser(null);
@@ -105,6 +127,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }, []);
+
+  const updateProfilePhoto = useCallback(async (photoUrl: string | null) => {
+    const currentUserId = user?.id;
+    // Optimistic update
+    setUser((prev) => (prev ? { ...prev, profilePhotoUrl: photoUrl } : null));
+
+    if (typeof window !== "undefined" && currentUserId) {
+      if (photoUrl) {
+        try {
+          localStorage.setItem(`roomsync_avatar_${currentUserId}`, photoUrl);
+        } catch {
+          // ignore storage quota
+        }
+      } else {
+        localStorage.removeItem(`roomsync_avatar_${currentUserId}`);
+      }
+    }
+
+    try {
+      await savePartialOnboarding({
+        profile: {
+          profile_photo_url: photoUrl,
+        } as any,
+      });
+    } catch (err) {
+      console.error("Failed to sync profile photo to backend:", err);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     let ignore = false;
@@ -141,12 +191,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // ignore
           }
 
+          const cachedPhoto =
+            typeof window !== "undefined" && userId
+              ? localStorage.getItem(`roomsync_avatar_${userId}`)
+              : null;
+          const photoUrl = onboardingData.profile?.profile_photo_url || cachedPhoto || null;
+          if (photoUrl && typeof window !== "undefined" && userId) {
+            try {
+              localStorage.setItem(`roomsync_avatar_${userId}`, photoUrl);
+            } catch {
+              // ignore
+            }
+          }
+
           setUser({
             id: userId,
             username,
             email: userEmail,
             firstName: onboardingData.profile?.first_name || "",
             lastName: onboardingData.profile?.last_name || "",
+            profilePhotoUrl: photoUrl,
           });
         }
       } catch (onboardingErr: unknown) {
@@ -158,10 +222,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             try {
               const userAccount = await getCurrentUser();
+              const cachedPhoto =
+                typeof window !== "undefined" && userAccount.id
+                  ? localStorage.getItem(`roomsync_avatar_${userAccount.id}`)
+                  : null;
               setUser({
                 id: userAccount.id,
                 username: userAccount.username,
                 email: userAccount.email,
+                profilePhotoUrl: cachedPhoto || null,
               });
             } catch {
               setUser(null);
@@ -208,6 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         refetch: checkAuth,
+        updateProfilePhoto,
       }}
     >
       {children}

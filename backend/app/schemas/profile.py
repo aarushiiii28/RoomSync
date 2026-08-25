@@ -68,9 +68,9 @@ class ProfileCreate(BaseModel):
         max_length=_MAX_BIO_LEN,
         description="Short personal bio (optional).",
     )
-    profile_photo_url: HttpUrl | None = Field(
+    profile_photo_url: str | None = Field(
         default=None,
-        description="Absolute URL of the profile photo (optional).",
+        description="Absolute URL or data URI of the profile photo (optional).",
     )
 
     @field_validator("first_name", "last_name", mode="before")
@@ -124,7 +124,7 @@ class ProfileUpdate(BaseModel):
         default=None, min_length=1, max_length=_MAX_OCCUPATION_LEN
     )
     bio: str | None = Field(default=None, max_length=_MAX_BIO_LEN)
-    profile_photo_url: HttpUrl | None = Field(default=None)
+    profile_photo_url: str | None = Field(default=None)
 
     @field_validator("first_name", "last_name", mode="before")
     @classmethod
