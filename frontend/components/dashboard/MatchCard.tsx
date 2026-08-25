@@ -9,20 +9,20 @@ import type { CandidateMatchItem } from "@/types/matching";
 
 export const PREDICTION_CONFIG = {
   High: {
-    bg: "rgba(22, 163, 74, 0.10)",
-    border: "#16a34a",
+    bg: "#dcfce7",
+    border: "#22c55e",
     text: "#15803d",
     dot: "#16a34a",
   },
   Medium: {
-    bg: "rgba(234, 88, 12, 0.10)",
-    border: "#ea580c",
+    bg: "#ffedd5",
+    border: "#f97316",
     text: "#c2410c",
     dot: "#ea580c",
   },
   Low: {
-    bg: "rgba(220, 38, 38, 0.10)",
-    border: "#dc2626",
+    bg: "#fee2e2",
+    border: "#ef4444",
     text: "#b91c1c",
     dot: "#dc2626",
   },
