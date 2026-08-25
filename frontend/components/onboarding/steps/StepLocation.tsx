@@ -13,6 +13,7 @@ import {
   isValidCountry,
   isValidState,
   isValidCity,
+  verifyPincodeOnline,
 } from "@/constants/locations";
 
 interface StepLocationProps {
@@ -26,6 +27,16 @@ export default function StepLocation({
   onChange,
   errors,
 }: StepLocationProps) {
+  const [pinVerification, setPinVerification] = React.useState<{
+    loading: boolean;
+    valid: boolean | null;
+    message?: string;
+    details?: string;
+  }>({
+    loading: false,
+    valid: null,
+  });
+
   // Cascading Reset Handlers
   const handleCountryChange = (country: string) => {
     onChange({
@@ -60,11 +71,46 @@ export default function StepLocation({
     onChange({ pincode: numericValue });
   };
 
+  React.useEffect(() => {
+    const pin = data.pincode?.trim() || "";
+    if (pin.length === 6 && data.state) {
+      let isCurrent = true;
+      setPinVerification({ loading: true, valid: null });
+      verifyPincodeOnline(data.state, pin).then((res) => {
+        if (!isCurrent) return;
+        if (res.isValid) {
+          setPinVerification({
+            loading: false,
+            valid: true,
+            details:
+              res.postOffice && res.district
+                ? `${res.postOffice}, ${res.district}`
+                : "Valid Indian postal code",
+          });
+        } else {
+          setPinVerification({
+            loading: false,
+            valid: false,
+            message: res.error || "Invalid PIN code.",
+          });
+        }
+      });
+      return () => {
+        isCurrent = false;
+      };
+    } else {
+      setPinVerification({ loading: false, valid: null });
+    }
+  }, [data.pincode, data.state]);
+
   // Geographic Validity Check for Address Summary
   const isCountryValid = isValidCountry(data.country);
   const isStateValid = isCountryValid && isValidState(data.country, data.state);
   const isCityValid = isStateValid && isValidCity(data.country, data.state, data.city);
   const hasValidHierarchy = isCountryValid && isStateValid && isCityValid;
+
+  const pincodeError =
+    errors.pincode || (pinVerification.valid === false ? pinVerification.message : undefined);
 
   return (
     <div className="space-y-5">
@@ -122,16 +168,30 @@ export default function StepLocation({
         <FormField
           label="Postal / PIN Code"
           required
-          error={errors.pincode}
+          error={pincodeError}
         >
-          <TextInput
-            icon={<Hash size={16} />}
-            placeholder="e.g. 560034"
-            value={data.pincode}
-            onChange={handlePincodeChange}
-            hasError={Boolean(errors.pincode)}
-            disabled={!data.state}
-          />
+          <div className="space-y-1.5">
+            <TextInput
+              icon={<Hash size={16} />}
+              placeholder="e.g. 560034"
+              value={data.pincode}
+              onChange={handlePincodeChange}
+              hasError={Boolean(pincodeError)}
+              disabled={!data.state}
+            />
+            {pinVerification.loading && (
+              <p className="text-[12px] text-zinc-500 flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-[#D97870] border-t-transparent animate-spin" />
+                Verifying PIN code with India Post...
+              </p>
+            )}
+            {pinVerification.valid && pinVerification.details && !pincodeError && (
+              <p className="text-[12px] text-emerald-600 font-medium flex items-center gap-1">
+                <span>✓ Verified:</span>
+                <span>{pinVerification.details}</span>
+              </p>
+            )}
+          </div>
         </FormField>
       </div>
 

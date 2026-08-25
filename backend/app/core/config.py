@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     OTP_MAX_ATTEMPTS: int = 5
     OTP_RESEND_COOLDOWN_SECONDS: int = 60
 
+    # Optional SMTP (e.g. Gmail SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = True
+
     model_config = SettingsConfigDict(
         env_file=str(_ENV_PATH) if _ENV_PATH.exists() else ".env",
         extra="ignore",

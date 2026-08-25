@@ -26,6 +26,7 @@ import {
   isValidCity,
   findStateForCity,
   validatePincodeForState,
+  verifyPincodeOnline,
 } from "@/constants/locations";
 
 const WIZARD_STEPS: StepInfo[] = [
@@ -325,7 +326,7 @@ export default function OnboardingWizard() {
   // ---------------------------------------------------------------------------
   // Validation per step
   // ---------------------------------------------------------------------------
-  const validateStep = (step: number): boolean => {
+  const validateStep = async (step: number): Promise<boolean> => {
     const errors: Record<string, string> = {};
 
     if (step === 1) {
@@ -397,7 +398,7 @@ export default function OnboardingWizard() {
       if (!pincode) {
         errors.pincode = "Postal / PIN code is required.";
       } else {
-        const pinCheck = validatePincodeForState(state, pincode);
+        const pinCheck = await verifyPincodeOnline(state, pincode);
         if (!pinCheck.isValid) {
           errors.pincode =
             pinCheck.error || "PIN code must contain exactly 6 digits.";
@@ -485,8 +486,9 @@ export default function OnboardingWizard() {
   // ---------------------------------------------------------------------------
   // Navigation handlers
   // ---------------------------------------------------------------------------
-  const handleContinue = () => {
-    if (validateStep(currentStep)) {
+  const handleContinue = async () => {
+    const isValid = await validateStep(currentStep);
+    if (isValid) {
       setStepErrors({});
       setSubmitError(null);
       if (currentStep < 5) {
@@ -520,33 +522,47 @@ export default function OnboardingWizard() {
   // Save and Exit (Partial Save)
   // ---------------------------------------------------------------------------
   const handleSaveAndExit = async () => {
-    setSubmitError(null);
     setSavingExit(true);
+    setSubmitError(null);
 
     try {
-      // Build a partial location that only sends fields with actual values
-      // This ensures the backend's LocationUpdate never sees empty strings
-      // which would fail min_length=1 field validators.
+      const partialLocation: Record<string, string> = {};
       const loc = formData.location;
-      const partialLocation: Partial<typeof loc> = {};
       if (loc.country?.trim()) partialLocation.country = loc.country;
       if (loc.state?.trim()) partialLocation.state = loc.state;
       if (loc.city?.trim()) partialLocation.city = loc.city;
       if (loc.locality?.trim()) partialLocation.locality = loc.locality;
       if (loc.pincode?.trim()) partialLocation.pincode = loc.pincode;
-      if (loc.latitude !== undefined) partialLocation.latitude = loc.latitude;
-      if (loc.longitude !== undefined) partialLocation.longitude = loc.longitude;
 
-      const partialPayload: OnboardingPartialUpdate = {
-        profile: formData.profile,
-        location: Object.keys(partialLocation).length > 0 ? partialLocation : undefined,
-        accommodation: formData.accommodation,
+      const partialAccommodation: Record<string, any> = {};
+      const acc = formData.accommodation;
+      if (acc.accommodation_type)
+        partialAccommodation.accommodation_type = acc.accommodation_type;
+      if (acc.room_type) partialAccommodation.room_type = acc.room_type;
+      if (acc.move_in_timeframe)
+        partialAccommodation.move_in_timeframe = acc.move_in_timeframe;
+      if (acc.lease_duration)
+        partialAccommodation.lease_duration = acc.lease_duration;
+      if (acc.budget_min !== undefined && acc.budget_min !== "")
+        partialAccommodation.budget_min = Number(acc.budget_min);
+      if (acc.budget_max !== undefined && acc.budget_max !== "")
+        partialAccommodation.budget_max = Number(acc.budget_max);
+
+      const partialUpdate: OnboardingPartialUpdate = {
+        profile: formData.profile.first_name ? formData.profile : undefined,
+        location:
+          Object.keys(partialLocation).length > 0
+            ? (partialLocation as any)
+            : undefined,
+        accommodation:
+          Object.keys(partialAccommodation).length > 0
+            ? partialAccommodation
+            : undefined,
         lifestyle: formData.lifestyle,
         preferences: formData.preferences,
       };
 
-      await savePartialOnboarding(partialPayload);
-
+      await savePartialOnboarding(partialUpdate);
       setSaveExitSuccess(true);
       setTimeout(() => {
         router.push("/");
@@ -566,7 +582,8 @@ export default function OnboardingWizard() {
   const handleSubmit = async () => {
     // 1. Validate all steps 1 through 5 to ensure full completeness
     for (let step = 1; step <= 5; step++) {
-      if (!validateStep(step)) {
+      const isValid = await validateStep(step);
+      if (!isValid) {
         setCurrentStep(step);
         setSubmitError(
           "Please complete all required fields before completing your profile."

@@ -902,3 +902,104 @@ export function validatePincodeForState(
 
   return { isValid: true };
 }
+
+const PINCODE_CACHE: Record<
+  string,
+  { isValid: boolean; error?: string; postOffice?: string; district?: string; state?: string }
+> = {};
+
+export async function verifyPincodeOnline(
+  state: string,
+  pincode: string
+): Promise<{
+  isValid: boolean;
+  error?: string;
+  postOffice?: string;
+  district?: string;
+  state?: string;
+}> {
+  const cleanPin = pincode.trim();
+  if (!/^[1-9]\d{5}$/.test(cleanPin)) {
+    return {
+      isValid: false,
+      error: "PIN code must contain exactly 6 digits and cannot start with 0.",
+    };
+  }
+
+  // Basic State prefix check first
+  const prefixCheck = validatePincodeForState(state, cleanPin);
+  if (!prefixCheck.isValid) {
+    return prefixCheck;
+  }
+
+  const cacheKey = `${state.trim().toLowerCase()}_${cleanPin}`;
+  if (PINCODE_CACHE[cacheKey]) {
+    return PINCODE_CACHE[cacheKey];
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      return { isValid: true };
+    }
+
+    const data = await res.json();
+    if (
+      !Array.isArray(data) ||
+      data.length === 0 ||
+      data[0].Status !== "Success" ||
+      !data[0].PostOffice ||
+      data[0].PostOffice.length === 0
+    ) {
+      const result = {
+        isValid: false,
+        error: `Invalid PIN code. No postal records found for ${cleanPin}.`,
+      };
+      PINCODE_CACHE[cacheKey] = result;
+      return result;
+    }
+
+    const offices = data[0].PostOffice as Array<{
+      Name: string;
+      District: string;
+      State: string;
+    }>;
+    const poState = offices[0].State;
+    const poDistrict = offices[0].District;
+    const poName = offices[0].Name;
+
+    // Verify state match
+    const cleanState = state.split("(")[0].trim().toLowerCase();
+    const cleanPoState = poState.split("(")[0].trim().toLowerCase();
+    if (
+      cleanState &&
+      cleanPoState &&
+      !cleanState.includes(cleanPoState) &&
+      !cleanPoState.includes(cleanState)
+    ) {
+      const result = {
+        isValid: false,
+        error: `PIN code ${cleanPin} belongs to ${poState}, not ${state}.`,
+      };
+      PINCODE_CACHE[cacheKey] = result;
+      return result;
+    }
+
+    const result = {
+      isValid: true,
+      postOffice: poName,
+      district: poDistrict,
+      state: poState,
+    };
+    PINCODE_CACHE[cacheKey] = result;
+    return result;
+  } catch {
+    return { isValid: true };
+  }
+}

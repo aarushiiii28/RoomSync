@@ -1,4 +1,7 @@
 import logging
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Optional
 import httpx
 
@@ -9,10 +12,11 @@ logger = logging.getLogger("roomsync.email")
 
 def send_verification_email(to_email: str, otp_code: str) -> bool:
     """
-    Send a professional 6-digit OTP verification email to the user via Resend.
+    Send a professional 6-digit OTP verification email to the user via Resend or SMTP.
 
-    If RESEND_API_KEY is not configured (e.g. during offline development or testing),
-    the email dispatch is safely simulated and logged for development convenience.
+    - If RESEND_API_KEY is configured, sends via Resend.
+    - If SMTP_USER / SMTP_HOST is configured, sends via SMTP (e.g. Gmail SMTP).
+    - Otherwise logs the OTP safely in development.
     """
     subject = "Verify your RoomSync email"
     html_content = f"""
@@ -113,39 +117,68 @@ def send_verification_email(to_email: str, otp_code: str) -> bool:
 
     api_key = settings.RESEND_API_KEY.strip() if settings.RESEND_API_KEY else ""
 
-    if not api_key:
-        logger.info(
-            "[DEV MODE] Resend API key not set. Simulated sending OTP email to %s",
-            to_email,
-        )
-        return True
-
-    try:
-        response = httpx.post(
-            "https://api.resend.com/emails",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "from": settings.EMAIL_FROM,
-                "to": [to_email],
-                "subject": subject,
-                "html": html_content,
-                "text": text_content,
-            },
-            timeout=10.0,
-        )
-
-        if response.status_code >= 200 and response.status_code < 300:
-            logger.info("Successfully sent verification email to %s", to_email)
-            return True
-        else:
-            logger.error(
-                "Resend API error (%s): %s", response.status_code, response.text
+    # Option 1: Send via Resend
+    if api_key:
+        try:
+            response = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": settings.EMAIL_FROM,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html_content,
+                    "text": text_content,
+                },
+                timeout=10.0,
             )
+
+            if response.status_code >= 200 and response.status_code < 300:
+                logger.info("Successfully sent verification email via Resend to %s", to_email)
+                return True
+            else:
+                logger.error(
+                    "Resend API error (%s): %s", response.status_code, response.text
+                )
+                return False
+        except Exception as e:
+            logger.error("Failed to deliver email via Resend to %s: %s", to_email, str(e))
             return False
 
-    except Exception as e:
-        logger.error("Failed to deliver email to %s: %s", to_email, str(e))
-        return False
+    # Option 2: Send via SMTP (e.g. Gmail App Password)
+    if settings.SMTP_HOST or settings.SMTP_USER:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = settings.SMTP_USER or settings.EMAIL_FROM
+            msg["To"] = to_email
+
+            part1 = MIMEText(text_content, "plain")
+            part2 = MIMEText(html_content, "html")
+            msg.attach(part1)
+            msg.attach(part2)
+
+            host = settings.SMTP_HOST or "smtp.gmail.com"
+            port = settings.SMTP_PORT or 587
+            with smtplib.SMTP(host, port, timeout=10) as server:
+                if settings.SMTP_TLS:
+                    server.starttls()
+                if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.sendmail(msg["From"], [to_email], msg.as_string())
+            logger.info("Successfully sent email via SMTP to %s", to_email)
+            return True
+        except Exception as smtp_err:
+            logger.error("Failed to deliver email via SMTP to %s: %s", to_email, str(smtp_err))
+            return False
+
+    # Option 3: Development Mode Simulation
+    logger.info(
+        "[DEV MODE] Email credentials not set. Simulated sending OTP code [%s] to %s",
+        otp_code,
+        to_email,
+    )
+    return True
