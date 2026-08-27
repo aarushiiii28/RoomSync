@@ -49,9 +49,16 @@ class User(Base):
     server_default="false",
     )
 
-    password_hash: Mapped[str] = mapped_column(
+    cognito_sub: Mapped[str | None] = mapped_column(
+        String(128),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+
+    password_hash: Mapped[str | None] = mapped_column(
         Text,
-        nullable=False,
+        nullable=True,
     )
 
 

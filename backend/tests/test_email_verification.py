@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS users (
     id          TEXT PRIMARY KEY,
     username    TEXT NOT NULL UNIQUE,
     email       TEXT,
-    password_hash TEXT NOT NULL,
+    cognito_sub TEXT UNIQUE,
+    password_hash TEXT,
     email_verified INTEGER NOT NULL DEFAULT 0,
     is_active   INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
@@ -122,8 +123,26 @@ class TestEmailVerificationSystem(unittest.TestCase):
         )
         self.mock_send = self.patcher.start()
 
+        self.cognito_signup_patcher = patch(
+            "app.services.auth.cognito_sign_up",
+            return_value={"user_sub": "sub-mock-123", "user_confirmed": False},
+        )
+        self.mock_cognito_signup = self.cognito_signup_patcher.start()
+
+        self.cognito_auth_patcher = patch(
+            "app.services.auth.cognito_initiate_auth",
+            return_value={
+                "access_token": "mock-access-token",
+                "refresh_token": "mock-refresh-token",
+                "token_type": "bearer",
+            },
+        )
+        self.mock_cognito_auth = self.cognito_auth_patcher.start()
+
     def tearDown(self):
         self.patcher.stop()
+        self.cognito_signup_patcher.stop()
+        self.cognito_auth_patcher.stop()
         self.db.query(EmailVerification).delete()
         self.db.query(RefreshToken).delete()
         self.db.query(User).delete()
@@ -140,19 +159,16 @@ class TestEmailVerificationSystem(unittest.TestCase):
         user = register_user(self.db, user_data)
         self.assertFalse(user.email_verified)
 
-    # 2. Registration generates verification record
-    def test_02_registration_generates_verification_record(self):
+    # 2. Registration generates user record
+    def test_02_registration_generates_user_record(self):
         user_data = UserRegister(
             username="bob_verify",
             email="bob@example.com",
             password="SecurePassword123!",
         )
         user = register_user(self.db, user_data)
-
-        records = self.db.query(EmailVerification).filter(EmailVerification.user_id == user.id).all()
-        self.assertEqual(len(records), 1)
-        self.assertIsNone(records[0].used_at)
-        self.assertEqual(records[0].attempts, 0)
+        self.assertEqual(user.username, "bob_verify")
+        self.assertFalse(user.email_verified)
 
     # 3. OTP is hashed, not stored plaintext
     def test_03_otp_is_hashed_never_plaintext(self):
@@ -416,12 +432,14 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.db.add(user)
         self.db.commit()
 
+        self.mock_cognito_auth.side_effect = ValueError("Please verify your email before logging in.")
         with self.assertRaises(ValueError) as ctx:
             login_user(
                 self.db,
                 UserLogin(username="kevin_unverified", password="MyPassword123!"),
             )
         self.assertIn("verify your email before logging in", str(ctx.exception))
+        self.mock_cognito_auth.side_effect = None
 
     # 14. Verified user can log in normally
     def test_14_verified_user_logs_in_normally(self):
@@ -443,7 +461,8 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.assertIsNotNone(token_pair.refresh_token)
 
     # 15. API Endpoints for /auth/verify-email and /auth/resend-verification
-    def test_15_api_endpoints_integration(self):
+    @patch("app.services.auth.cognito_confirm_sign_up")
+    def test_15_api_endpoints_integration(self, mock_cognito_confirm):
         user = User(
             id=uuid4(),
             username="mike_api",
@@ -455,20 +474,9 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.db.commit()
 
         known_otp = "789123"
-        now = datetime.now(timezone.utc)
-        record = EmailVerification(
-            user_id=user.id,
-            otp_hash=hash_otp(known_otp),
-            expires_at=now + timedelta(minutes=10),
-            attempts=0,
-            used_at=None,
-            created_at=now,
-            last_sent_at=now,
-        )
-        self.db.add(record)
-        self.db.commit()
 
-        # Test POST /auth/verify-email with wrong OTP
+        # Mock wrong OTP failure from Cognito
+        mock_cognito_confirm.side_effect = ValueError("Invalid verification code.")
         bad_res = self.client.post(
             "/auth/verify-email",
             json={"email": "mike@example.com", "otp": "000000"},
@@ -476,7 +484,9 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.assertEqual(bad_res.status_code, 400)
         self.assertIn("Invalid verification code", bad_res.json()["detail"])
 
-        # Test POST /auth/verify-email with correct OTP
+        # Mock correct OTP success from Cognito
+        mock_cognito_confirm.side_effect = None
+        mock_cognito_confirm.return_value = True
         good_res = self.client.post(
             "/auth/verify-email",
             json={"email": "mike@example.com", "otp": known_otp},
@@ -488,8 +498,8 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.db.refresh(user)
         self.assertTrue(user.email_verified)
 
-    # 16. Failed Resend delivery raises clean application error
-    def test_16_failed_resend_delivery_raises_application_error(self):
+    # 16. Failed email delivery raises clean application error
+    def test_16_failed_email_delivery_raises_application_error(self):
         user = User(
             id=uuid4(),
             username="nina_test",
@@ -500,7 +510,7 @@ class TestEmailVerificationSystem(unittest.TestCase):
         self.db.add(user)
         self.db.commit()
 
-        # Temporarily configure send_verification_email to simulate a failed Resend delivery
+        # Temporarily configure send_verification_email to simulate a failed email delivery
         with patch("app.services.email_verification.send_verification_email", return_value=False):
             with self.assertRaises(ValueError) as ctx:
                 resend_verification_otp(self.db, "nina@example.com")

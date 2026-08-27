@@ -7,6 +7,8 @@ from app.db.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
+    ConfirmForgotPasswordRequest,
+    ForgotPasswordRequest,
     RefreshTokenRequest,
     ResendVerificationRequest,
     VerifyEmailRequest,
@@ -15,13 +17,13 @@ from app.schemas.auth import (
 from app.schemas.token import Token
 from app.schemas.user import UserLogin, UserRegister, UserResponse
 from app.services.auth import (
+    confirm_forgot_password_user,
+    forgot_password_user,
     login_user,
     logout_all_sessions,
     logout_session,
     refresh_access_token,
     register_user,
-)
-from app.services.email_verification import (
     resend_verification_otp,
     verify_email_otp,
 )
@@ -68,6 +70,7 @@ def verify_email(
             db=db,
             email_or_username=request_data.email,
             plain_otp=request_data.otp,
+            username=request_data.username,
         )
         return VerifyEmailResponse(message=msg)
     except ValueError as exc:
@@ -90,6 +93,7 @@ def resend_verification(
         msg = resend_verification_otp(
             db=db,
             email_or_username=request_data.email,
+            username=request_data.username,
         )
         return VerifyEmailResponse(message=msg)
     except ValueError as exc:
@@ -132,10 +136,17 @@ def login(
         )
         return login_user(db, credentials)
     except ValueError as exc:
+        err_msg = str(exc)
+        status_code = (
+            status.HTTP_400_BAD_REQUEST
+            if "verify your email" in err_msg.lower()
+            else status.HTTP_401_UNAUTHORIZED
+        )
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
+            status_code=status_code,
+            detail=err_msg,
         ) from exc
+
 
 @router.post(
     "/login/json",
@@ -148,10 +159,17 @@ def login_json(
     try:
         return login_user(db, credentials)
     except ValueError as exc:
+        err_msg = str(exc)
+        status_code = (
+            status.HTTP_400_BAD_REQUEST
+            if "verify your email" in err_msg.lower()
+            else status.HTTP_401_UNAUTHORIZED
+        )
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
+            status_code=status_code,
+            detail=err_msg,
         ) from exc
+
 
 @router.post(
     "/refresh",
@@ -206,3 +224,46 @@ def logout_all(
         ) from exc
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/forgot-password",
+    response_model=VerifyEmailResponse,
+    status_code=status.HTTP_200_OK,
+)
+def forgot_password(
+    request_data: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        msg = forgot_password_user(db, request_data.email)
+        return VerifyEmailResponse(message=msg)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/confirm-forgot-password",
+    response_model=VerifyEmailResponse,
+    status_code=status.HTTP_200_OK,
+)
+def confirm_forgot_password(
+    request_data: ConfirmForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        msg = confirm_forgot_password_user(
+            db=db,
+            email_or_username=request_data.email,
+            confirmation_code=request_data.confirmation_code,
+            new_password=request_data.new_password,
+        )
+        return VerifyEmailResponse(message=msg)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc

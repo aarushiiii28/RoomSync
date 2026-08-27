@@ -409,6 +409,8 @@ export default function UserProfileMenu() {
     initials = user.firstName.charAt(0).toUpperCase();
   } else if (user?.username) {
     initials = user.username.charAt(0).toUpperCase();
+  } else if (user?.email) {
+    initials = user.email.charAt(0).toUpperCase();
   }
 
   const displayName = user?.firstName
@@ -793,14 +795,12 @@ export default function UserProfileMenu() {
                 </div>
 
                 <div className="overflow-hidden min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-white truncate">
+                  <p className="text-[14px] font-semibold text-white truncate" title={displayName}>
                     {displayName}
                   </p>
-                  {user?.email && (
-                    <p className="text-[11px] text-zinc-400 truncate">
-                      {user.email}
-                    </p>
-                  )}
+                  <p className="text-[12px] text-zinc-400 truncate mt-0.5" title={user?.email || "No email linked"}>
+                    {user?.email || (user?.username ? `@${user.username}` : "No email linked")}
+                  </p>
                 </div>
 
                 {/* Small Compact Photo Options Box (anchored to the left of the menu) */}

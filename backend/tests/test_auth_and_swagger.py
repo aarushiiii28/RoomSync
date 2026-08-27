@@ -6,6 +6,7 @@ import sys
 import unittest
 from datetime import date, time
 from pathlib import Path
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 # Ensure project root and backend are in sys.path
@@ -18,48 +19,26 @@ for p in [str(PROJECT_ROOT), str(BACKEND_ROOT)]:
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.db.database import get_db
 from app.main import app
 from app.models.lifestyle_profile import LifestyleProfile
-from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.models.user_profile import UserProfile
-from app.services.security import hash_password
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS users (
     id          TEXT PRIMARY KEY,
     username    TEXT NOT NULL UNIQUE,
     email       TEXT,
-    password_hash TEXT NOT NULL,
+    cognito_sub TEXT UNIQUE,
+    password_hash TEXT,
     email_verified INTEGER NOT NULL DEFAULT 0,
     is_active   INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
     last_login_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS email_verifications (
-    id          TEXT PRIMARY KEY,
-    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    otp_hash    TEXT NOT NULL,
-    expires_at  TEXT NOT NULL,
-    attempts    INTEGER NOT NULL DEFAULT 0,
-    used_at     TEXT,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    last_sent_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id          TEXT PRIMARY KEY,
-    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    session_id  TEXT NOT NULL,
-    token_hash  TEXT NOT NULL,
-    is_revoked  INTEGER NOT NULL DEFAULT 0,
-    revoked_at  TEXT,
-    expires_at  TEXT NOT NULL,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS user_profiles (
@@ -71,7 +50,23 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     gender          TEXT NOT NULL,
     occupation      TEXT NOT NULL,
     bio             TEXT,
+    roommate_expectations TEXT,
     profile_photo_url TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+    id              TEXT PRIMARY KEY,
+    user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    country         TEXT NOT NULL,
+    state           TEXT NOT NULL,
+    city            TEXT NOT NULL,
+    locality        TEXT NOT NULL,
+    pincode         TEXT NOT NULL,
+    latitude        REAL NOT NULL,
+    longitude       REAL NOT NULL,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(user_id)
@@ -100,30 +95,15 @@ CREATE TABLE IF NOT EXISTS lifestyle_profiles (
     pet_tolerance           TEXT NOT NULL DEFAULT 'comfortable',
     guest_frequency         TEXT NOT NULL,
     guest_tolerance         TEXT NOT NULL DEFAULT 'comfortable',
-    cooking                 TEXT NOT NULL DEFAULT 'sometimes',
+    cooking                 TEXT NOT NULL,
     cooking_tolerance       TEXT NOT NULL DEFAULT 'comfortable',
-    party_frequency         TEXT NOT NULL DEFAULT 'sometimes',
+    party_frequency         TEXT NOT NULL,
     party_tolerance         TEXT NOT NULL DEFAULT 'comfortable',
     fitness                 TEXT NOT NULL,
     music                   INTEGER NOT NULL DEFAULT 0,
     work_from_home          INTEGER NOT NULL DEFAULT 0,
     created_at              TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at              TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(user_id)
-);
-
-CREATE TABLE IF NOT EXISTS locations (
-    id              TEXT PRIMARY KEY,
-    user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    country         TEXT NOT NULL,
-    state           TEXT NOT NULL,
-    city            TEXT NOT NULL,
-    locality        TEXT NOT NULL,
-    pincode         TEXT NOT NULL,
-    latitude        REAL NOT NULL,
-    longitude       REAL NOT NULL,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(user_id)
 );
 
@@ -169,19 +149,16 @@ CREATE TABLE IF NOT EXISTS roommate_preferences (
 """
 
 
-from sqlalchemy.pool import StaticPool
-
 class TestAuthAndSwaggerIntegration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Create an in-memory SQLite database with StaticPool so all connections share the DB
         cls.engine = create_engine(
             "sqlite:///:memory:",
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
-        
+
         with cls.engine.connect() as conn:
             for statement in _SCHEMA_SQL.strip().split(";"):
                 stmt = statement.strip()
@@ -210,7 +187,7 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
             id=u1_id,
             username="testuser1",
             email="testuser1@example.com",
-            password_hash=hash_password("Password123!"),
+            cognito_sub="sub-testuser-1",
             email_verified=True,
             is_active=True,
         )
@@ -254,7 +231,7 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
             id=u2_id,
             username="testuser2",
             email="testuser2@example.com",
-            password_hash=hash_password("Password123!"),
+            cognito_sub="sub-testuser-2",
             email_verified=True,
             is_active=True,
         )
@@ -308,49 +285,66 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
         res = self.client.get("/openapi.json")
         self.assertEqual(res.status_code, 200)
         schema = res.json()
-        
+
         security_schemes = schema["components"]["securitySchemes"]
         self.assertIn("OAuth2PasswordBearer", security_schemes)
         oauth2 = security_schemes["OAuth2PasswordBearer"]
         token_url = oauth2["flows"]["password"]["tokenUrl"]
         self.assertEqual(token_url, "/auth/login", f"Expected /auth/login, got {token_url}")
 
-    def test_02_json_login_works(self):
-        """Verify existing POST /auth/login/json endpoint works."""
+    @patch("app.services.auth.cognito_initiate_auth")
+    def test_02_json_login_works(self, mock_auth):
+        """Verify existing POST /auth/login/json endpoint works with Cognito."""
+        mock_auth.return_value = {
+            "access_token": "mock-cognito-access-token",
+            "refresh_token": "mock-cognito-refresh-token",
+            "token_type": "bearer",
+            "expires_in": 3600,
+        }
         payload = {"username": "testuser1", "password": "Password123!"}
         res = self.client.post("/auth/login/json", json=payload)
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertIn("access_token", data)
-        self.assertIn("refresh_token", data)
+        self.assertEqual(data["access_token"], "mock-cognito-access-token")
+        self.assertEqual(data["refresh_token"], "mock-cognito-refresh-token")
         self.assertEqual(data["token_type"].lower(), "bearer")
 
-    def test_03_oauth2_form_login_works(self):
+    @patch("app.services.auth.cognito_initiate_auth")
+    def test_03_oauth2_form_login_works(self, mock_auth):
         """Verify POST /auth/login with form-urlencoded data works (for Swagger)."""
+        mock_auth.return_value = {
+            "access_token": "mock-cognito-form-token",
+            "refresh_token": "mock-cognito-refresh-token",
+            "token_type": "bearer",
+            "expires_in": 3600,
+        }
         form_data = {"username": "testuser1", "password": "Password123!"}
         res = self.client.post("/auth/login", data=form_data)
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertIn("access_token", data)
-        self.assertIn("refresh_token", data)
+        self.assertEqual(data["access_token"], "mock-cognito-form-token")
         self.assertEqual(data["token_type"].lower(), "bearer")
 
-    def test_04_invalid_credentials_returns_401(self):
+    @patch("app.services.auth.cognito_initiate_auth")
+    def test_04_invalid_credentials_returns_401(self, mock_auth):
         """Verify invalid credentials return 401 for both endpoints."""
+        mock_auth.side_effect = ValueError("Invalid username or password.")
         res_json = self.client.post("/auth/login/json", json={"username": "testuser1", "password": "WrongPassword"})
         self.assertEqual(res_json.status_code, 401)
 
         res_form = self.client.post("/auth/login", data={"username": "testuser1", "password": "WrongPassword"})
         self.assertEqual(res_form.status_code, 401)
 
-    def test_05_authenticated_predict_user_endpoint(self):
+    @patch("app.dependencies.auth.verify_cognito_token")
+    def test_05_authenticated_predict_user_endpoint(self, mock_verify):
         """Verify POST /matching/predict/user with bearer token executes ML pipeline."""
-        # 1. Login via OAuth2 form (Swagger flow)
-        login_res = self.client.post("/auth/login", data={"username": "testuser1", "password": "Password123!"})
-        token = login_res.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
+        mock_verify.return_value = {
+            "sub": "sub-testuser-1",
+            "username": "testuser1",
+            "token_use": "access",
+        }
+        headers = {"Authorization": "Bearer mock-valid-token"}
 
-        # 2. Call protected predict endpoint
         payload = {"candidate_user_id": str(self.u2_id)}
         res = self.client.post("/matching/predict/user", json=payload, headers=headers)
         self.assertEqual(res.status_code, 200)
@@ -362,14 +356,16 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
         self.assertIn("probabilities", data)
         self.assertIn("feature_signals", data)
 
-    def test_06_authenticated_recommendations_endpoint(self):
+    @patch("app.dependencies.auth.verify_cognito_token")
+    def test_06_authenticated_recommendations_endpoint(self, mock_verify):
         """Verify GET /matching/recommendations with bearer token returns ranked matches."""
-        # 1. Login via OAuth2 form (Swagger flow)
-        login_res = self.client.post("/auth/login", data={"username": "testuser1", "password": "Password123!"})
-        token = login_res.json()["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
+        mock_verify.return_value = {
+            "sub": "sub-testuser-1",
+            "username": "testuser1",
+            "token_use": "access",
+        }
+        headers = {"Authorization": "Bearer mock-valid-token"}
 
-        # 2. Call recommendations endpoint
         res = self.client.get("/matching/recommendations?top_n=5", headers=headers)
         self.assertEqual(res.status_code, 200)
         data = res.json()
@@ -377,7 +373,7 @@ class TestAuthAndSwaggerIntegration(unittest.TestCase):
         self.assertIn("matches", data)
         self.assertIn("total_evaluated", data)
         self.assertGreaterEqual(len(data["matches"]), 1)
-        
+
         match = data["matches"][0]
         self.assertIn("prediction", match)
         self.assertIn("confidence", match)

@@ -52,77 +52,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      setIsAuthenticated(true);
+
+      // 1. Fetch User Identity (id, username, email)
+      let userId = "";
+      let username = "";
+      let userEmail: string | null = null;
+
+      try {
+        const userAccount = await getCurrentUser();
+        userId = userAccount.id || "";
+        username = userAccount.username || "";
+        userEmail = userAccount.email || null;
+      } catch (userErr: unknown) {
+        const errObj = userErr as { response?: { status?: number } };
+        if (errObj?.response?.status === 401) {
+          tokenStorage.clearTokens();
+          setIsAuthenticated(false);
+          setProfileComplete(false);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Fetch Onboarding Profile (first_name, last_name, avatar, is_complete)
+      let firstName = "";
+      let lastName = "";
+      let photoUrl: string | null = null;
+      let isComplete = false;
+
       try {
         const onboardingData = await getMyOnboarding();
-        setIsAuthenticated(true);
-        const isComplete = Boolean(onboardingData.is_complete);
-        setProfileComplete(isComplete);
-
-        let username = "";
-        let userId = "";
-        let userEmail: string | null = null;
-        try {
-          const userAccount = await getCurrentUser();
-          username = userAccount.username;
-          userId = userAccount.id;
-          userEmail = userAccount.email;
-        } catch {
-          // ignore
-        }
+        isComplete = Boolean(onboardingData.is_complete);
+        firstName = onboardingData.profile?.first_name || "";
+        lastName = onboardingData.profile?.last_name || "";
 
         const cachedPhoto =
           typeof window !== "undefined" && userId
             ? localStorage.getItem(`roomsync_avatar_${userId}`)
             : null;
-        const photoUrl = onboardingData.profile?.profile_photo_url || cachedPhoto || null;
+        photoUrl = onboardingData.profile?.profile_photo_url || cachedPhoto || null;
         if (photoUrl && typeof window !== "undefined" && userId) {
           try {
             localStorage.setItem(`roomsync_avatar_${userId}`, photoUrl);
           } catch {
-            // storage quota fallback
+            // ignore
           }
         }
-
-        setUser({
-          id: userId,
-          username,
-          email: userEmail,
-          firstName: onboardingData.profile?.first_name || "",
-          lastName: onboardingData.profile?.last_name || "",
-          profilePhotoUrl: photoUrl,
-        });
       } catch (onboardingErr: unknown) {
         const errObj = onboardingErr as { response?: { status?: number } };
-        if (errObj?.response?.status === 404) {
-          setIsAuthenticated(true);
-          setProfileComplete(false);
-
-          try {
-            const userAccount = await getCurrentUser();
-            const cachedPhoto =
-              typeof window !== "undefined" && userAccount.id
-                ? localStorage.getItem(`roomsync_avatar_${userAccount.id}`)
-                : null;
-            setUser({
-              id: userAccount.id,
-              username: userAccount.username,
-              email: userAccount.email,
-              profilePhotoUrl: cachedPhoto || null,
-            });
-          } catch {
-            setUser(null);
-          }
-        } else if (errObj?.response?.status === 401) {
+        if (errObj?.response?.status === 401) {
           tokenStorage.clearTokens();
           setIsAuthenticated(false);
           setProfileComplete(false);
           setUser(null);
-        } else {
-          setIsAuthenticated(true);
-          setProfileComplete(false);
-          setUser(null);
+          setLoading(false);
+          return;
         }
+        isComplete = false;
       }
+
+      setProfileComplete(isComplete);
+      setUser({
+        id: userId,
+        username,
+        email: userEmail,
+        firstName,
+        lastName,
+        profilePhotoUrl: photoUrl,
+      });
     } finally {
       setLoading(false);
     }
@@ -160,96 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let ignore = false;
 
     async function init() {
-      const token = tokenStorage.getAccessToken();
-
-      if (!token) {
-        if (!ignore) {
-          setIsAuthenticated(false);
-          setProfileComplete(false);
-          setUser(null);
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const onboardingData = await getMyOnboarding();
-        if (!ignore) {
-          setIsAuthenticated(true);
-          const isComplete = Boolean(onboardingData.is_complete);
-          setProfileComplete(isComplete);
-
-          let username = "";
-          let userId = "";
-          let userEmail: string | null = null;
-          try {
-            const userAccount = await getCurrentUser();
-            username = userAccount.username;
-            userId = userAccount.id;
-            userEmail = userAccount.email;
-          } catch {
-            // ignore
-          }
-
-          const cachedPhoto =
-            typeof window !== "undefined" && userId
-              ? localStorage.getItem(`roomsync_avatar_${userId}`)
-              : null;
-          const photoUrl = onboardingData.profile?.profile_photo_url || cachedPhoto || null;
-          if (photoUrl && typeof window !== "undefined" && userId) {
-            try {
-              localStorage.setItem(`roomsync_avatar_${userId}`, photoUrl);
-            } catch {
-              // ignore
-            }
-          }
-
-          setUser({
-            id: userId,
-            username,
-            email: userEmail,
-            firstName: onboardingData.profile?.first_name || "",
-            lastName: onboardingData.profile?.last_name || "",
-            profilePhotoUrl: photoUrl,
-          });
-        }
-      } catch (onboardingErr: unknown) {
-        const errObj = onboardingErr as { response?: { status?: number } };
-        if (!ignore) {
-          if (errObj?.response?.status === 404) {
-            setIsAuthenticated(true);
-            setProfileComplete(false);
-
-            try {
-              const userAccount = await getCurrentUser();
-              const cachedPhoto =
-                typeof window !== "undefined" && userAccount.id
-                  ? localStorage.getItem(`roomsync_avatar_${userAccount.id}`)
-                  : null;
-              setUser({
-                id: userAccount.id,
-                username: userAccount.username,
-                email: userAccount.email,
-                profilePhotoUrl: cachedPhoto || null,
-              });
-            } catch {
-              setUser(null);
-            }
-          } else if (errObj?.response?.status === 401) {
-            tokenStorage.clearTokens();
-            setIsAuthenticated(false);
-            setProfileComplete(false);
-            setUser(null);
-          } else {
-            setIsAuthenticated(true);
-            setProfileComplete(false);
-            setUser(null);
-          }
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
+      if (!ignore) {
+        await checkAuth();
       }
     }
 

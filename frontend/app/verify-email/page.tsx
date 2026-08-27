@@ -13,7 +13,9 @@ function VerifyEmailForm() {
   const searchParams = useSearchParams();
 
   const emailParam = searchParams.get("email") || "";
+  const usernameParam = searchParams.get("username") || "";
   const [email, setEmail] = useState(emailParam);
+  const [username, setUsername] = useState(usernameParam);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -24,12 +26,15 @@ function VerifyEmailForm() {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Update email if query param changes
+  // Update email and username if query params change
   useEffect(() => {
     if (emailParam) {
       setEmail(emailParam);
     }
-  }, [emailParam]);
+    if (usernameParam) {
+      setUsername(usernameParam);
+    }
+  }, [emailParam, usernameParam]);
 
   // Cooldown countdown timer (60s resend rate limit)
   useEffect(() => {
@@ -98,7 +103,7 @@ function VerifyEmailForm() {
     setError("");
     setSuccess("");
 
-    if (!email.trim()) {
+    if (!email.trim() && !username.trim()) {
       setError("Please provide your email address.");
       return;
     }
@@ -115,7 +120,7 @@ function VerifyEmailForm() {
 
     try {
       setLoading(true);
-      const res = await verifyEmail(email, fullOtp);
+      const res = await verifyEmail(email, fullOtp, username);
       setSuccess(res.message || "Email verified successfully!");
 
       setTimeout(() => {
@@ -137,14 +142,14 @@ function VerifyEmailForm() {
     setError("");
     setSuccess("");
 
-    if (!email.trim()) {
+    if (!email.trim() && !username.trim()) {
       setError("Please provide your email address to resend the code.");
       return;
     }
 
     try {
       setResending(true);
-      const res = await resendVerification(email);
+      const res = await resendVerification(email, username);
       setSuccess(res.message || "A new verification code has been sent!");
       setCooldown(60);
       setTimeLeft(300); // Reset 5-minute timer

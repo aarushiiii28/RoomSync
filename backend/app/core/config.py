@@ -17,9 +17,12 @@ class Settings(BaseSettings):
     # Debug
     DEBUG: bool = False
 
-    # Email & OTP (Resend)
-    RESEND_API_KEY: str = ""
-    EMAIL_FROM: str = "RoomSync <onboarding@resend.dev>"
+    # AWS Cognito Configuration
+    AWS_REGION: str = "us-east-1"
+    COGNITO_USER_POOL_ID: str = ""
+    COGNITO_CLIENT_ID: str = ""
+    COGNITO_CLIENT_SECRET: str = ""
+    
     FRONTEND_URL: str = "http://localhost:3000"
     OTP_EXPIRY_MINUTES: int = 5
     OTP_MAX_ATTEMPTS: int = 5

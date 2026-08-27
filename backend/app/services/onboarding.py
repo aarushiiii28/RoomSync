@@ -91,9 +91,11 @@ def _profile_kwargs(data: ProfileCreate, user_id: UUID) -> dict:
         "gender": data.gender,
         "occupation": data.occupation,
         "bio": data.bio,
+        "roommate_expectations": data.roommate_expectations,
         # Pydantic HttpUrl serialises to str; store the string value.
         "profile_photo_url": str(photo) if photo is not None else None,
     }
+
 
 
 def _location_kwargs(data: LocationCreate, user_id: UUID) -> dict:
@@ -323,8 +325,10 @@ def save_partial_onboarding(
                         "gender": "female",
                         "occupation": "",
                         "bio": None,
+                        "roommate_expectations": None,
                         "profile_photo_url": None,
                     }
+
                     defaults.update(data)
                     data = defaults
                 _upsert(db, UserProfile, user_id=uid, kwargs=data)

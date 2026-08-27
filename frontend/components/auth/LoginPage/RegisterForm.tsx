@@ -110,15 +110,36 @@ export default function RegisterForm() {
       setSuccess("Account created! Please verify your email.");
 
       setTimeout(() => {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        router.push(
+          `/verify-email?email=${encodeURIComponent(email)}&username=${encodeURIComponent(username)}`
+        );
       }, 1200);
 
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { detail?: string } } };
-      setError(
-        errorObj?.response?.data?.detail ??
-        "Registration failed."
-      );
+      const errorObj = err as {
+        response?: {
+          data?: {
+            detail?: string | Array<{ msg?: string; message?: string }>;
+            message?: string;
+          };
+        };
+        message?: string;
+      };
+
+      const detail = errorObj?.response?.data?.detail;
+      let errorMsg = "Registration failed. Please try again.";
+
+      if (typeof detail === "string") {
+        errorMsg = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        errorMsg = detail.map((d) => d.msg || d.message || JSON.stringify(d)).join(", ");
+      } else if (errorObj?.response?.data?.message) {
+        errorMsg = errorObj.response.data.message;
+      } else if (errorObj?.message) {
+        errorMsg = errorObj.message;
+      }
+
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

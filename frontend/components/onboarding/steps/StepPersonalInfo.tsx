@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Calendar } from "lucide-react";
+import { User, Calendar, Lock, Globe } from "lucide-react";
 import { ProfileCreate, GenderEnum } from "@/types/onboarding";
 import FormField from "../shared/FormField";
 import TextInput from "../shared/TextInput";
@@ -19,11 +19,20 @@ const GENDER_OPTIONS: PillOption<GenderEnum>[] = [
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
 
+function countWords(text: string): number {
+  const trimmed = text ? text.trim() : "";
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
 export default function StepPersonalInfo({
   data,
   onChange,
   errors,
 }: StepPersonalInfoProps) {
+  const bioWords = countWords(data.bio || "");
+  const expWords = countWords(data.roommate_expectations || "");
+
   return (
     <div className="space-y-5">
       {/* First and Last Name Grid */}
@@ -101,39 +110,103 @@ export default function StepPersonalInfo({
         />
       </FormField>
 
-      {/* Short Bio */}
+      {/* Section 1: Bio (Public, 10–20 words) */}
       <FormField
-        label="About You"
-        optional
-        description="A short intro helps potential roommates get to know your vibe."
+        label="Bio"
+        required
+        description="Visible to everyone on your public profile (10–20 words)."
         error={errors.bio}
       >
         <div className="relative">
           <textarea
             rows={3}
-            maxLength={1000}
-            placeholder="e.g. Love weekend cooking, quiet weekdays, and working on side projects..."
+            placeholder="e.g. Software engineer who enjoys quiet weeknights, cooking on weekends, and keeping shared spaces clean."
             value={data.bio || ""}
             onChange={(e) => onChange({ bio: e.target.value })}
-            className="
+            className={`
               w-full
               p-3.5
               rounded-lg
               bg-white
-              border border-[#EBD6CF]
+              border
+              ${errors.bio ? "border-red-400 focus:border-red-500" : "border-[#EBD6CF] focus:border-[#494F66]"}
               text-[#2D3246]
               text-[14px]
               placeholder:text-[#A6ACBE]
               outline-none
               shadow-xs
               transition-all duration-200
-              focus:border-[#494F66]
               resize-none
-            "
+            `}
           />
-          <div className="flex justify-end mt-1">
-            <span className="text-[11px] text-[#7E849B]">
-              {(data.bio || "").length}/1000
+          <div className="flex items-center justify-between mt-1 px-0.5">
+            <span className="text-[11px] text-[#7E849B] flex items-center gap-1">
+              <Globe size={12} className="text-[#7E849B]" /> Public profile
+            </span>
+            <span
+              className={`text-[11px] font-medium ${
+                bioWords === 0
+                  ? "text-[#7E849B]"
+                  : bioWords >= 10 && bioWords <= 20
+                  ? "text-emerald-600"
+                  : "text-amber-600"
+              }`}
+            >
+              {bioWords} / 10–20 words
+              {bioWords >= 10 && bioWords <= 20 ? " ✓" : ""}
+            </span>
+          </div>
+        </div>
+      </FormField>
+
+      {/* Section 2: Roommate Expectations (Private & Confidential, 20–250 words) */}
+      <FormField
+        label="What are your expectations from the roommate?"
+        required
+        description="Private & confidential — used by our AI to calculate your compatibility score and to generate a short, private explanation of your match for the other person. Your original answers are never shown as written."
+        error={errors.roommate_expectations}
+      >
+        <div className="relative">
+          <textarea
+            rows={4}
+            placeholder="e.g. Looking for a clean and respectful roommate who values quiet hours after 10 PM on weekdays, communicates openly about chore distribution, and is mindful of shared spaces..."
+            value={data.roommate_expectations || ""}
+            onChange={(e) => onChange({ roommate_expectations: e.target.value })}
+            className={`
+              w-full
+              p-3.5
+              rounded-lg
+              bg-white
+              border
+              ${
+                errors.roommate_expectations
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-[#EBD6CF] focus:border-[#494F66]"
+              }
+              text-[#2D3246]
+              text-[14px]
+              placeholder:text-[#A6ACBE]
+              outline-none
+              shadow-xs
+              transition-all duration-200
+              resize-none
+            `}
+          />
+          <div className="flex items-center justify-between mt-1 px-0.5">
+            <span className="text-[11px] text-[#7E849B] flex items-center gap-1">
+              <Lock size={12} className="text-emerald-600" /> Private & confidential (only for matching)
+            </span>
+            <span
+              className={`text-[11px] font-medium ${
+                expWords === 0
+                  ? "text-[#7E849B]"
+                  : expWords >= 20 && expWords <= 250
+                  ? "text-emerald-600"
+                  : "text-amber-600"
+              }`}
+            >
+              {expWords} / 20–250 words
+              {expWords >= 20 && expWords <= 250 ? " ✓" : ""}
             </span>
           </div>
         </div>
@@ -141,3 +214,4 @@ export default function StepPersonalInfo({
     </div>
   );
 }
+

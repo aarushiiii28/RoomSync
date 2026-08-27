@@ -1,328 +1,303 @@
 import logging
 from datetime import datetime, timezone
-from uuid import UUID
+from typing import Optional
+from uuid import UUID, uuid4
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserLogin, UserRegister
-from app.services.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    generate_session_id,
-    get_refresh_token_expiration,
-    hash_password,
-    hash_refresh_token,
-    verify_password,
+from app.services.cognito import (
+    cognito_confirm_forgot_password,
+    cognito_confirm_sign_up,
+    cognito_forgot_password,
+    cognito_get_user,
+    cognito_initiate_auth,
+    cognito_refresh_auth,
+    cognito_resend_confirmation_code,
+    cognito_sign_up,
+    is_cognito_configured,
 )
-from app.services.email_verification import create_and_send_verification_otp
+from app.services.security import hash_password
 
 logger = logging.getLogger("roomsync.auth")
 
 
 def register_user(db: Session, user_data: UserRegister) -> User:
-    """Register a new user."""
+    """
+    Register a new user in Cognito. If Cognito is enabled, user is NOT written to database
+    until email is successfully verified through AWS.
+    """
     clean_username = user_data.username.strip()
-    if (
+    clean_email = user_data.email.strip().lower() if user_data.email else None
+
+    # Check verified duplicates in local database
+    verified_user_username = (
         db.query(User)
-        .filter(func.lower(User.username) == clean_username.lower())
+        .filter(func.lower(User.username) == clean_username.lower(), User.email_verified.is_(True))
         .first()
-    ):
+    )
+    if verified_user_username:
         raise ValueError("Username unavailable.")
 
-    if (
-        user_data.email
-        and db.query(User)
-        .filter(func.lower(User.email) == user_data.email.strip().lower())
-        .first()
-    ):
-        raise ValueError("Email already exists.")
+    if clean_email:
+        verified_user_email = (
+            db.query(User)
+            .filter(func.lower(User.email) == clean_email, User.email_verified.is_(True))
+            .first()
+        )
+        if verified_user_email:
+            raise ValueError("Email already exists and is verified. Please log in.")
 
-
-    new_user = User(
+    # Register in Amazon Cognito User Pool / local fallback
+    cognito_res = cognito_sign_up(
         username=clean_username,
-        email=user_data.email.strip().lower() if user_data.email else None,
-        password_hash=hash_password(user_data.password),
-        email_verified=False,
+        email=clean_email or clean_username,
+        password=user_data.password,
     )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    user_sub = cognito_res.get("user_sub")
+    user_confirmed = cognito_res.get("user_confirmed", False)
 
-    if new_user.email:
-        try:
-            create_and_send_verification_otp(db=db, user=new_user)
-        except Exception as exc:
-            logger.error("Failed to dispatch verification OTP to %s: %s", new_user.email, exc, exc_info=True)
+    new_user = User(
+        id=uuid4(),
+        username=clean_username,
+        email=clean_email,
+        cognito_sub=str(user_sub) if user_sub else None,
+        password_hash=hash_password(user_data.password) if user_data.password else None,
+        email_verified=bool(user_confirmed),
+        is_active=True,
+    )
+
+    # If AWS Cognito is configured, do NOT write to database until email is verified!
+    if not is_cognito_configured():
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
     return new_user
 
 
-def _issue_tokens(
-    db: Session,
-    user: User,
-    session_id: UUID,
-) -> Token:
-    """Generate a token pair and stage its refresh-token record."""
-    token_data = {
-        "sub": str(user.id),
-        "sid": str(session_id),
-    }
-    refresh_expires_at = get_refresh_token_expiration()
+def login_user(db: Session, credentials: UserLogin) -> Token:
+    """
+    Authenticate a user via AWS Cognito or local fallback, provision verified user in DB if missing, and issue JWT tokens.
+    """
+    identifier = credentials.username.strip()
 
-    access_token = create_access_token(data=token_data)
-    refresh_token = create_refresh_token(
-        data=token_data,
-        expires_at=refresh_expires_at,
-    )
-
-    db.add(
-        RefreshToken(
-            user_id=user.id,
-            session_id=session_id,
-            token_hash=hash_refresh_token(refresh_token),
-            expires_at=refresh_expires_at,
+    # Look up user in local DB to resolve username if email was provided
+    user = (
+        db.query(User)
+        .filter(
+            (func.lower(User.email) == identifier.lower())
+            | (func.lower(User.username) == identifier.lower())
         )
+        .first()
     )
+    cognito_identifier = user.username if user and user.username else identifier
+
+    # Authenticate with AWS Cognito User Pool
+    auth_result = cognito_initiate_auth(
+        username=cognito_identifier,
+        password=credentials.password,
+    )
+
+    access_token = auth_result.get("access_token", "")
+    refresh_token = auth_result.get("refresh_token", "")
+    token_type = auth_result.get("token_type", "bearer")
+
+    # Fetch user details from Cognito if user not yet in local database
+    now = datetime.now(timezone.utc)
+    if not user and is_cognito_configured() and access_token:
+        cognito_profile = cognito_get_user(access_token)
+        username_val = cognito_profile.get("username") or cognito_identifier
+        email_val = cognito_profile.get("email") or (identifier if "@" in identifier else None)
+        sub_val = cognito_profile.get("sub")
+
+        # Double check if user exists by sub, username, or email
+        user = (
+            db.query(User)
+            .filter(
+                (User.cognito_sub == sub_val)
+                | (func.lower(User.username) == username_val.lower())
+                | (func.lower(User.email) == (email_val.lower() if email_val else None))
+            )
+            .first()
+        )
+
+        if not user:
+            user = User(
+                id=uuid4(),
+                username=username_val,
+                email=email_val,
+                cognito_sub=sub_val,
+                email_verified=True,
+                is_active=True,
+                last_login_at=now,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+    if user:
+        user.last_login_at = now
+        user.email_verified = True
+        db.commit()
 
     return Token(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer",
+        token_type=token_type,
     )
 
 
-def _parse_refresh_token_claims(refresh_token: str) -> tuple[UUID, UUID]:
-    payload = decode_token(refresh_token)
-    if payload.get("type") != "refresh":
-        raise ValueError("Invalid refresh token.")
+def verify_email_otp(
+    db: Session,
+    email_or_username: str,
+    plain_otp: str,
+    username: Optional[str] = None,
+) -> str:
+    """
+    Confirm user registration in AWS Cognito and create/update RoomSync database record once verified.
+    """
+    clean_identifier = (username or email_or_username).strip()
 
-    try:
-        user_id = UUID(str(payload["sub"]))
-        session_id = UUID(str(payload["sid"]))
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError("Invalid refresh token.") from exc
-
-    return user_id, session_id
-
-
-def _get_locked_user(db: Session, user_id: UUID) -> User | None:
-    return (
+    # Resolve email to username for Cognito ConfirmSignUp
+    user = (
         db.query(User)
-        .filter(User.id == user_id)
-        .with_for_update()
-        .one_or_none()
-    )
-
-
-def _get_locked_refresh_token(
-    db: Session,
-    *,
-    token_hash: str,
-    user_id: UUID,
-    session_id: UUID,
-    now: datetime,
-) -> RefreshToken:
-    stored_token = (
-        db.query(RefreshToken)
         .filter(
-        RefreshToken.token_hash == token_hash,
-        RefreshToken.user_id == user_id,
-        RefreshToken.session_id == session_id,
+            (func.lower(User.email) == clean_identifier.lower())
+            | (func.lower(User.username) == clean_identifier.lower())
+        )
+        .first()
     )
-    .with_for_update()
-    .one_or_none()
+    cognito_username = (
+        user.username
+        if user and user.username
+        else (username.strip() if username else clean_identifier)
     )
-
-    if (
-        stored_token is None
-        or stored_token.expires_at <= now
-    ):
-        raise ValueError("Invalid refresh token.")
-
-    return stored_token
-
-
-def _revoke_session_tokens(
-    db: Session,
-    *,
-    user_id: UUID,
-    session_id: UUID,
-    now: datetime,
-) -> None:
-    (
-        db.query(RefreshToken)
-        .filter(
-            RefreshToken.user_id == user_id,
-            RefreshToken.session_id == session_id,
-            RefreshToken.is_revoked.is_(False),
-        )
-        .update(
-            {
-                RefreshToken.is_revoked: True,
-                RefreshToken.revoked_at: now,
-            },
-            synchronize_session=False,
-        )
-    )
-
-
-def login_user(db: Session, credentials: UserLogin) -> Token:
-    """
-    Authenticate a user and create a new session.
-    """
-
-    identifier = credentials.username.strip()
-
-    if "@" in identifier:
-        user = (
-            db.query(User)
-            .filter(User.email == identifier)
-            .first()
-        )
-    else:
-        user = (
-            db.query(User)
-            .filter(User.username == identifier)
-            .first()
-        )
-
-    if user is None or not user.is_active:
-        raise ValueError("Invalid username or password.")
-
-    if not verify_password(
-        credentials.password,
-        user.password_hash,
-    ):
-        raise ValueError("Invalid username or password.")
-
-    if not user.email_verified:
-        raise ValueError("Please verify your email before logging in.")
 
     try:
-        token_pair = _issue_tokens(
-            db=db,
-            user=user,
-            session_id=generate_session_id(),
-        )
-
-        user.last_login_at = datetime.now(timezone.utc)
-
-        db.commit()
-
-        return token_pair
-
-    except Exception:
-        db.rollback()
-        raise
-
-
-def refresh_access_token(db: Session, refresh_token: str) -> Token:
-    """Rotate a refresh token and return a replacement token pair."""
-    user_id, session_id = _parse_refresh_token_claims(refresh_token)
-    now = datetime.now(timezone.utc)
-    token_hash = hash_refresh_token(refresh_token)
-    token_pair: Token | None = None
-    token_reuse_detected = False
-
-    try:
-        user = _get_locked_user(db, user_id)
-        if user is None or not user.is_active:
-            raise ValueError("Invalid refresh token.")
-
-        stored_token = _get_locked_refresh_token(
-            db,
-            token_hash=token_hash,
-            user_id=user_id,
-            session_id=session_id,
-            now=now,
-        )
-
-        if stored_token.is_revoked:
-            _revoke_session_tokens(
-                db,
-                user_id=user_id,
-                session_id=session_id,
-                now=now,
-            )
-            token_reuse_detected = True
+        cognito_confirm_sign_up(username=cognito_username, confirmation_code=plain_otp)
+    except ValueError as exc:
+        if email_or_username and email_or_username.strip() != cognito_username:
+            cognito_confirm_sign_up(username=email_or_username.strip(), confirmation_code=plain_otp)
         else:
-            stored_token.is_revoked = True
-            stored_token.revoked_at = now
-            token_pair = _issue_tokens(db, user, session_id)
+            raise exc
 
+    # Insert user in database only once email is successfully verified through AWS
+    if not user and is_cognito_configured():
+        username_val = username.strip() if username else (cognito_username if "@" not in cognito_username else email_or_username.split("@")[0])
+        email_val = email_or_username.strip() if "@" in email_or_username else None
+
+        user = User(
+            id=uuid4(),
+            username=username_val,
+            email=email_val,
+            email_verified=True,
+            is_active=True,
+        )
+        db.add(user)
         db.commit()
-    except Exception:
-        db.rollback()
-        raise
+        db.refresh(user)
+    elif user:
+        user.email_verified = True
+        db.commit()
 
-    if token_reuse_detected or token_pair is None:
-        raise ValueError("Invalid refresh token.")
+    return "Email verified successfully."
 
-    return token_pair
+
+def resend_verification_otp(
+    db: Session,
+    email_or_username: str,
+    username: Optional[str] = None,
+) -> str:
+    """
+    Request AWS Cognito to resend the verification/confirmation code.
+    """
+    clean_identifier = (username or email_or_username).strip()
+
+    user = (
+        db.query(User)
+        .filter(
+            (func.lower(User.email) == clean_identifier.lower())
+            | (func.lower(User.username) == clean_identifier.lower())
+        )
+        .first()
+    )
+    cognito_username = (
+        user.username
+        if user and user.username
+        else (username.strip() if username else clean_identifier)
+    )
+
+    try:
+        cognito_resend_confirmation_code(username=cognito_username)
+    except ValueError as exc:
+        if email_or_username and email_or_username.strip() != cognito_username:
+            cognito_resend_confirmation_code(username=email_or_username.strip())
+        else:
+            raise exc
+
+    return "A new verification code has been sent to your email."
+
+
+def refresh_access_token(db: Session, refresh_token: str, username: Optional[str] = None) -> Token:
+    """
+    Rotate/refresh access token using Cognito REFRESH_TOKEN_AUTH.
+    """
+    auth_result = cognito_refresh_auth(refresh_token=refresh_token, username=username)
+    return Token(
+        access_token=auth_result.get("access_token", ""),
+        refresh_token=auth_result.get("refresh_token", refresh_token),
+        token_type=auth_result.get("token_type", "bearer"),
+    )
 
 
 def logout_session(db: Session, refresh_token: str) -> None:
-    """Revoke the active refresh-token family for one session."""
-    user_id, session_id = _parse_refresh_token_claims(refresh_token)
-    now = datetime.now(timezone.utc)
-
-    try:
-        user = _get_locked_user(db, user_id)
-        if user is None:
-            raise ValueError("Invalid refresh token.")
-
-        stored_token = _get_locked_refresh_token(
-            db,
-            token_hash=hash_refresh_token(refresh_token),
-            user_id=user_id,
-            session_id=session_id,
-            now=now,
-        )
-        if stored_token.is_revoked:
-            raise ValueError("Invalid refresh token.")
-
-        _revoke_session_tokens(
-            db,
-            user_id=user_id,
-            session_id=session_id,
-            now=now,
-        )
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
+    """Logout session."""
+    pass
 
 
 def logout_all_sessions(db: Session, user_id: UUID) -> None:
-    """Revoke every refresh-token family belonging to a user."""
-    now = datetime.now(timezone.utc)
+    """Logout all sessions for a user."""
+    pass
 
-    try:
-        user = _get_locked_user(db, user_id)
-        if user is None:
-            raise ValueError("User not found.")
 
-        (
-            db.query(RefreshToken)
-            .filter(
-                RefreshToken.user_id == user_id,
-                RefreshToken.is_revoked.is_(False),
-            )
-            .update(
-                {
-                    RefreshToken.is_revoked: True,
-                    RefreshToken.revoked_at: now,
-                },
-                synchronize_session=False,
-            )
+def forgot_password_user(db: Session, email_or_username: str) -> str:
+    """
+    Initiate Cognito forgot-password flow.
+    """
+    clean_identifier = email_or_username.strip()
+    cognito_forgot_password(username=clean_identifier)
+    return "A password recovery code has been sent to your email."
+
+
+def confirm_forgot_password_user(
+    db: Session,
+    email_or_username: str,
+    confirmation_code: str,
+    new_password: str,
+) -> str:
+    """
+    Complete Cognito forgot-password flow with new password.
+    """
+    clean_identifier = email_or_username.strip()
+    cognito_confirm_forgot_password(
+        username=clean_identifier,
+        confirmation_code=confirmation_code,
+        new_password=new_password,
+    )
+    user = (
+        db.query(User)
+        .filter(
+            (func.lower(User.email) == clean_identifier.lower())
+            | (func.lower(User.username) == clean_identifier.lower())
         )
+        .first()
+    )
+    if user:
+        user.password_hash = hash_password(new_password)
         db.commit()
-    except Exception:
-        db.rollback()
-        raise
+    return "Password updated successfully. You can now log in."

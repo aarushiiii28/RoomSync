@@ -31,7 +31,10 @@ _MIN_LAST_NAME_LEN = 1
 _MAX_LAST_NAME_LEN = 100
 
 _MAX_OCCUPATION_LEN = 150
-_MAX_BIO_LEN = 1000
+_MIN_BIO_WORDS = 10
+_MAX_BIO_WORDS = 20
+_MIN_EXPECTATIONS_WORDS = 20
+_MAX_EXPECTATIONS_WORDS = 250
 
 # Oldest plausible user: 100 years old; youngest: 18 (platform minimum).
 _MIN_AGE_YEARS = 18
@@ -63,10 +66,11 @@ class ProfileCreate(BaseModel):
         max_length=_MAX_OCCUPATION_LEN,
         description="Current occupation or job title.",
     )
-    bio: str | None = Field(
-        default=None,
-        max_length=_MAX_BIO_LEN,
-        description="Short personal bio (optional).",
+    bio: str = Field(
+        description="Personal bio visible to everyone (10–20 words required).",
+    )
+    roommate_expectations: str = Field(
+        description="Private expectations from roommate (20–250 words required).",
     )
     profile_photo_url: str | None = Field(
         default=None,
@@ -80,6 +84,34 @@ class ProfileCreate(BaseModel):
         if isinstance(v, str):
             return v.strip()
         return v
+
+    @field_validator("bio")
+    @classmethod
+    def validate_bio_word_count(cls, v: str) -> str:
+        text = v.strip() if isinstance(v, str) else ""
+        words = text.split()
+        count = len(words)
+        if count < _MIN_BIO_WORDS:
+            raise ValueError(f"Bio must be at least {_MIN_BIO_WORDS} words (currently {count} words).")
+        if count > _MAX_BIO_WORDS:
+            raise ValueError(f"Bio cannot exceed {_MAX_BIO_WORDS} words (currently {count} words).")
+        return text
+
+    @field_validator("roommate_expectations")
+    @classmethod
+    def validate_expectations_word_count(cls, v: str) -> str:
+        text = v.strip() if isinstance(v, str) else ""
+        words = text.split()
+        count = len(words)
+        if count < _MIN_EXPECTATIONS_WORDS:
+            raise ValueError(
+                f"Roommate expectations must be at least {_MIN_EXPECTATIONS_WORDS} words (currently {count} words)."
+            )
+        if count > _MAX_EXPECTATIONS_WORDS:
+            raise ValueError(
+                f"Roommate expectations cannot exceed {_MAX_EXPECTATIONS_WORDS} words (currently {count} words)."
+            )
+        return text
 
     @field_validator("date_of_birth")
     @classmethod
@@ -123,7 +155,8 @@ class ProfileUpdate(BaseModel):
     occupation: str | None = Field(
         default=None, min_length=1, max_length=_MAX_OCCUPATION_LEN
     )
-    bio: str | None = Field(default=None, max_length=_MAX_BIO_LEN)
+    bio: str | None = Field(default=None)
+    roommate_expectations: str | None = Field(default=None)
     profile_photo_url: str | None = Field(default=None)
 
     @field_validator("first_name", "last_name", mode="before")
@@ -132,6 +165,38 @@ class ProfileUpdate(BaseModel):
         if isinstance(v, str):
             return v.strip()
         return v
+
+    @field_validator("bio")
+    @classmethod
+    def validate_bio_word_count(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        text = v.strip()
+        words = text.split()
+        count = len(words)
+        if count < _MIN_BIO_WORDS:
+            raise ValueError(f"Bio must be at least {_MIN_BIO_WORDS} words (currently {count} words).")
+        if count > _MAX_BIO_WORDS:
+            raise ValueError(f"Bio cannot exceed {_MAX_BIO_WORDS} words (currently {count} words).")
+        return text
+
+    @field_validator("roommate_expectations")
+    @classmethod
+    def validate_expectations_word_count(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        text = v.strip()
+        words = text.split()
+        count = len(words)
+        if count < _MIN_EXPECTATIONS_WORDS:
+            raise ValueError(
+                f"Roommate expectations must be at least {_MIN_EXPECTATIONS_WORDS} words (currently {count} words)."
+            )
+        if count > _MAX_EXPECTATIONS_WORDS:
+            raise ValueError(
+                f"Roommate expectations cannot exceed {_MAX_EXPECTATIONS_WORDS} words (currently {count} words)."
+            )
+        return text
 
     @field_validator("date_of_birth")
     @classmethod
@@ -172,7 +237,9 @@ class ProfileResponse(BaseModel):
     date_of_birth: date
     gender: GenderEnum
     occupation: str
-    bio: str | None
-    profile_photo_url: str | None
+    bio: str | None = None
+    roommate_expectations: str | None = None
+    profile_photo_url: str | None = None
     created_at: datetime
     updated_at: datetime
+

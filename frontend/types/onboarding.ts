@@ -87,7 +87,8 @@ export interface ProfileCreate {
   date_of_birth: string; // ISO format: YYYY-MM-DD
   gender: GenderEnum;
   occupation: string;
-  bio?: string | null;
+  bio: string;
+  roommate_expectations: string;
   profile_photo_url?: string | null;
 }
 
@@ -100,10 +101,12 @@ export interface ProfileResponse {
   gender: GenderEnum;
   occupation: string;
   bio: string | null;
+  roommate_expectations?: string | null;
   profile_photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
 
 // ---------------------------------------------------------------------------
 // Location Schemas

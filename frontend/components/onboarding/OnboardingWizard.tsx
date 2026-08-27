@@ -69,8 +69,10 @@ const INITIAL_FORM_STATE: OnboardingCreate = {
     gender: "female",
     occupation: "",
     bio: "",
+    roommate_expectations: "",
     profile_photo_url: null,
   },
+
   location: {
     country: "India",
     state: "",
@@ -173,8 +175,11 @@ export default function OnboardingWizard() {
                   gender: existing.profile.gender || "female",
                   occupation: existing.profile.occupation || "",
                   bio: existing.profile.bio || "",
+                  roommate_expectations:
+                    existing.profile.roommate_expectations || "",
                   profile_photo_url: existing.profile.profile_photo_url || null,
                 }
+
               : INITIAL_FORM_STATE.profile,
             location: existing.location
               ? {
@@ -357,7 +362,31 @@ export default function OnboardingWizard() {
       if (!formData.profile.occupation.trim()) {
         errors.occupation = "Occupation is required.";
       }
+
+      // Bio validation (10–20 words, compulsory)
+      const bioText = (formData.profile.bio || "").trim();
+      const bioWords = bioText ? bioText.split(/\s+/).length : 0;
+      if (!bioText) {
+        errors.bio = "Bio is required (10–20 words).";
+      } else if (bioWords < 10) {
+        errors.bio = `Bio must be at least 10 words (currently ${bioWords} words).`;
+      } else if (bioWords > 20) {
+        errors.bio = `Bio cannot exceed 20 words (currently ${bioWords} words).`;
+      }
+
+      // Roommate Expectations validation (20–250 words, compulsory)
+      const expText = (formData.profile.roommate_expectations || "").trim();
+      const expWords = expText ? expText.split(/\s+/).length : 0;
+      if (!expText) {
+        errors.roommate_expectations =
+          "Roommate expectations are required (20–250 words).";
+      } else if (expWords < 20) {
+        errors.roommate_expectations = `Expectations must be at least 20 words (currently ${expWords} words).`;
+      } else if (expWords > 250) {
+        errors.roommate_expectations = `Expectations cannot exceed 250 words (currently ${expWords} words).`;
+      }
     } else if (step === 2) {
+
       const country = formData.location.country.trim();
       const state = formData.location.state.trim();
       const city = formData.location.city.trim();

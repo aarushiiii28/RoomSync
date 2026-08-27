@@ -11,33 +11,41 @@ export default function FeatureCard({ feature }: Props) {
   return (
     <motion.div
       whileHover={{
-        y: -8,
-        scale: 1.02,
+        y: -4,
+        scale: 1.015,
       }}
       transition={{
-        duration: 0.3,
+        duration: 0.25,
       }}
       className="
-        rounded-3xl
+        rounded-2xl
         border
         border-white/10
-        bg-[#121923]
-        p-10
+        bg-[#121923]/90
+        backdrop-blur-sm
+        p-6
+        flex
+        flex-col
+        items-center
         text-center
+        h-full
+        transition-colors
+        hover:border-pink-500/30
+        hover:bg-[#151f2c]
       "
     >
-      <div className="h-56 flex items-center justify-center">
-
+      <div className="h-32 md:h-36 w-full flex items-center justify-center relative">
         {feature.illustration}
-
       </div>
 
       <h3
         className="
-          mt-8
-          text-3xl
+          mt-4
+          text-lg
+          md:text-xl
           font-semibold
           text-white
+          tracking-tight
         "
       >
         {feature.title}
@@ -45,13 +53,14 @@ export default function FeatureCard({ feature }: Props) {
 
       <p
         className="
-          mt-5
+          mt-2.5
+          text-sm
           text-zinc-400
-          leading-8
+          leading-relaxed
         "
       >
         {feature.description}
       </p>
     </motion.div>
   );
-}
+}

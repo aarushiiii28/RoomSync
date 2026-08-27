@@ -56,6 +56,7 @@ class UserProfile(Base):
 
     # Nullable fields
     bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    roommate_expectations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     profile_photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(

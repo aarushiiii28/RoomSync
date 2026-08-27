@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS users (
     id          TEXT PRIMARY KEY,
     username    TEXT NOT NULL UNIQUE,
     email       TEXT,
-    password_hash TEXT NOT NULL,
+    cognito_sub TEXT UNIQUE,
+    password_hash TEXT,
     email_verified INTEGER NOT NULL DEFAULT 0,
     is_active   INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     gender          TEXT NOT NULL,
     occupation      TEXT NOT NULL,
     bio             TEXT,
+    roommate_expectations TEXT,
     profile_photo_url TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
@@ -219,9 +221,11 @@ _ONBOARDING_PAYLOAD = dict(
         date_of_birth="2000-05-15",
         gender="female",
         occupation="Software Engineer",
-        bio="Loves hiking.",
+        bio="Software engineer who enjoys quiet weeknights, cooking on weekends, and keeping shared spaces clean.",
+        roommate_expectations="Looking for a clean and respectful roommate who values quiet hours after 10 PM on weekdays, communicates openly about chores, and respects space.",
         profile_photo_url=None,
     ),
+
     location=dict(
         country="India",
         state="Karnataka",
@@ -518,7 +522,8 @@ class TestOnboardingService(unittest.TestCase):
             date_of_birth="2002-01-15",
             gender="female",
             occupation="Designer",
-            bio="Love art.",
+            bio="Designer who enjoys creating clean and intuitive user interfaces and exploring new art galleries.",
+            roommate_expectations="Looking for a respectful and tidy roommate who enjoys a calm living atmosphere, shares chores equally, and communicates well at all times.",
         )
         patch_payload = OnboardingPartialUpdate(profile=profile_data)
         progress = save_partial_onboarding(self.db, user=user, payload=patch_payload)
@@ -547,6 +552,8 @@ class TestOnboardingService(unittest.TestCase):
                 date_of_birth="1999-08-20",
                 gender="male",
                 occupation="Developer",
+                bio="Software developer who enjoys weekend cycling, coffee brewing, and keeping common areas tidy.",
+                roommate_expectations="Looking for a friendly and clean flatmate who respects quiet hours on work nights and contributes to keeping shared spaces neat and tidy.",
             ),
             location=LocationCreate(
                 country="India",
@@ -582,6 +589,8 @@ class TestOnboardingService(unittest.TestCase):
                     date_of_birth="2001-03-10",
                     gender="female",
                     occupation="Intern",
+                    bio="Marketing intern who loves quiet evenings, reading novels, and exploring new coffee shops.",
+                    roommate_expectations="I value open communication, quiet weekday evenings, and mutual respect for shared household chores and shared spaces in our apartment.",
                 )
             ),
         )
@@ -596,6 +605,8 @@ class TestOnboardingService(unittest.TestCase):
                     date_of_birth="2001-03-10",
                     gender="female",
                     occupation="Product Manager",
+                    bio="Marketing intern who loves quiet evenings, reading novels, and exploring new coffee shops.",
+                    roommate_expectations="I value open communication, quiet weekday evenings, and mutual respect for shared household chores and shared spaces in our apartment.",
                 )
             ),
         )
@@ -621,6 +632,8 @@ class TestOnboardingService(unittest.TestCase):
                     date_of_birth="1998-11-25",
                     gender="male",
                     occupation="Doctor",
+                    bio="Resident doctor who appreciates quiet restful evenings and enjoys cooking simple healthy meals.",
+                    roommate_expectations="Seeking a respectful roommate who understands erratic hospital shifts, maintains a clean kitchen, and values quiet resting times during late nights.",
                 )
             ),
         )
@@ -660,11 +673,15 @@ class TestOnboardingService(unittest.TestCase):
                             date_of_birth="2000-01-01",
                             gender="female",
                             occupation="Tester",
+                            bio="QA specialist who loves automated testing, clean environments, and quiet weekend gaming.",
+                            roommate_expectations="Looking for someone reliable, clean, and respectful of personal space and shared household responsibilities at home on a daily basis.",
                         )
                     ),
                 )
         finally:
             self.db.commit = original_commit
+
+
 
     def test_17_lifestyle_tolerance_fields_persisted(self):
         """Tolerance and importance fields in LifestyleProfile are saved and retrieved correctly."""
@@ -800,6 +817,57 @@ class TestOnboardingService(unittest.TestCase):
         )
         self.assertEqual(loc.city, "Mumbai")
         self.assertEqual(loc.state, "Maharashtra")
+
+    # ------------------------------------------------------------------
+    # 21. Bio word count validation (10 to 20 words)
+    # ------------------------------------------------------------------
+    def test_21_bio_word_count_validation(self):
+        from pydantic import ValidationError
+
+        # Too few words (< 10 words)
+        with self.assertRaises(ValidationError) as ctx:
+            ProfileCreate(
+                first_name="Test",
+                last_name="User",
+                date_of_birth="2000-01-01",
+                gender="female",
+                occupation="Engineer",
+                bio="Too short bio with only seven words now.",
+                roommate_expectations="Looking for a clean and respectful roommate who values quiet hours after 10 PM on weekdays, communicates openly about chores, and respects space.",
+            )
+        self.assertIn("Bio must be at least 10 words", str(ctx.exception))
+
+        # Too many words (> 20 words)
+        with self.assertRaises(ValidationError) as ctx:
+            ProfileCreate(
+                first_name="Test",
+                last_name="User",
+                date_of_birth="2000-01-01",
+                gender="female",
+                occupation="Engineer",
+                bio="This is an excessively long bio that contains far more than twenty words in total which is intentionally crafted to exceed the maximum allowed limit.",
+                roommate_expectations="Looking for a clean and respectful roommate who values quiet hours after 10 PM on weekdays, communicates openly about chores, and respects space.",
+            )
+        self.assertIn("Bio cannot exceed 20 words", str(ctx.exception))
+
+    # ------------------------------------------------------------------
+    # 22. Roommate expectations word count validation (20 to 250 words)
+    # ------------------------------------------------------------------
+    def test_22_roommate_expectations_word_count_validation(self):
+        from pydantic import ValidationError
+
+        # Too few words (< 20 words)
+        with self.assertRaises(ValidationError) as ctx:
+            ProfileCreate(
+                first_name="Test",
+                last_name="User",
+                date_of_birth="2000-01-01",
+                gender="female",
+                occupation="Engineer",
+                bio="Software engineer who enjoys quiet weeknights, cooking on weekends, and keeping shared spaces clean.",
+                roommate_expectations="Too short expectation with only eight words in here.",
+            )
+        self.assertIn("Roommate expectations must be at least 20 words", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------------
