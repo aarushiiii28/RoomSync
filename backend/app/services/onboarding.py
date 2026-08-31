@@ -327,7 +327,9 @@ def save_partial_onboarding(
                         "profile_photo_url": None,
                     }
 
-                    defaults.update(data)
+                    for k, v in data.items():
+                        if v is not None:
+                            defaults[k] = v
                     data = defaults
                 _upsert(db, UserProfile, user_id=uid, kwargs=data)
 
@@ -349,7 +351,9 @@ def save_partial_onboarding(
                         "latitude": 12.9716,
                         "longitude": 77.5946,
                     }
-                    defaults.update(data)
+                    for k, v in data.items():
+                        if v is not None:
+                            defaults[k] = v
                     data = defaults
                 _upsert(db, Location, user_id=uid, kwargs=data)
 
@@ -372,7 +376,9 @@ def save_partial_onboarding(
                         "budget_min": 5000.0,
                         "budget_max": 15000.0,
                     }
-                    defaults.update(data)
+                    for k, v in data.items():
+                        if v is not None:
+                            defaults[k] = v
                     data = defaults
                 _upsert(db, AccommodationPreference, user_id=uid, kwargs=data)
 
@@ -416,7 +422,9 @@ def save_partial_onboarding(
                         "music": False,
                         "work_from_home": False,
                     }
-                    defaults.update(data)
+                    for k, v in data.items():
+                        if v is not None:
+                            defaults[k] = v
                     data = defaults
                 _upsert(db, LifestyleProfile, user_id=uid, kwargs=data)
 
@@ -449,7 +457,9 @@ def save_partial_onboarding(
                         "cleanliness_requirement": "clean",
                         "preferred_sleep_schedule": "flexible",
                     }
-                    defaults.update(data)
+                    for k, v in data.items():
+                        if v is not None:
+                            defaults[k] = v
                     data = defaults
                 _upsert(db, RoommatePreference, user_id=uid, kwargs=data)
 
