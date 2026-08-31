@@ -44,8 +44,8 @@ export async function login(data: LoginData) {
   return response.data;
 }
 
-export async function googleLogin(code: string) {
-  const response = await api.post("/auth/google-callback", { code });
+export async function googleLogin(code: string, redirect_uri?: string) {
+  const response = await api.post("/auth/google-callback", { code, redirect_uri });
 
   tokenStorage.setTokens(
     response.data.access_token,

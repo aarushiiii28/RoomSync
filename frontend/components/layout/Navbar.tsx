@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import UserProfileMenu from "@/components/layout/UserProfileMenu";
 import { listConversations } from "@/services/chat";
@@ -16,8 +17,10 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
   const { isAuthenticated, profileComplete, user, loading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Poll for unread messages every 30s when logged in
   useEffect(() => {
@@ -36,42 +39,46 @@ export default function Navbar() {
   }, [isAuthenticated, user]);
 
   const handleScroll = (id: string) => {
+    setMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`/#${id}`);
     }
   };
 
   return (
-    <header className="w-full flex justify-center pt-12 -mb-6 px-6 relative z-10">
+    <header className="w-full flex justify-center pt-4 sm:pt-8 md:pt-12 px-4 sm:px-6 relative z-30">
       <nav
         className="
           w-full max-w-7xl h-16
           flex items-center justify-between
-          px-8
+          px-4 sm:px-6 md:px-8
           rounded-2xl
           border border-white/10
-          bg-white/5
-          backdrop-blur-xl
+          bg-[#151721]
           shadow-[0_8px_32px_rgba(0,0,0,0.4)]
+          relative
         "
       >
-        {/* Logo – kept as-is */}
-        <Link href="/" className="flex items-center gap-3 flex-shrink-0 flex-1">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
           <Image
             src="/logos/roomsync_logo.svg"
             alt="RoomSync"
-            width={32}
-            height={32}
+            width={30}
+            height={30}
             priority
+            className="w-7 h-7 sm:w-8 sm:h-8"
           />
-          <span className="font-sans text-[18px] font-semibold text-white tracking-tight whitespace-nowrap">
+          <span className="font-sans text-[17px] sm:text-[18px] font-semibold text-white tracking-tight whitespace-nowrap">
             RoomSync
           </span>
         </Link>
 
-        {/* Center Navigation */}
-        <div className="flex flex-1 justify-center items-center gap-16">
+        {/* Center Navigation (Desktop md+) */}
+        <div className="hidden md:flex flex-1 justify-center items-center gap-6 lg:gap-12 xl:gap-16">
           {navItems.map((item) => {
             const sharedClass = `
               group
@@ -122,17 +129,16 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Right Buttons & Profile Menu */}
-        <div className="flex flex-1 justify-end items-center gap-3">
+        {/* Right Buttons & Profile Menu (Desktop) */}
+        <div className="hidden md:flex items-center gap-3">
           {!loading && isAuthenticated && user ? (
             <>
               {!profileComplete && (
-                /* Authenticated + Incomplete Profile */
                 <Link
                   href="/onboarding"
                   className="
                     h-9
-                    px-5
+                    px-4 lg:px-5
                     rounded-[4px]
                     font-bold
                     text-[13px]
@@ -151,7 +157,7 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* Chat icon — left of profile avatar */}
+              {/* Chat icon */}
               <Link
                 href="/dashboard/chat"
                 className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all hover:bg-white/10"
@@ -168,17 +174,15 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Avatar menu at the rightmost corner */}
               <UserProfileMenu />
             </>
           ) : (
-            /* Unauthenticated */
             <>
               <Link
                 href="/login"
                 className="
                   h-9
-                  px-5
+                  px-4 lg:px-5
                   rounded-[4px]
                   border
                   border-white/15
@@ -200,7 +204,7 @@ export default function Navbar() {
                 href="/register"
                 className="
                   h-9
-                  px-5
+                  px-4 lg:px-5
                   rounded-[4px]
                   font-bold
                   text-[13px]
@@ -221,6 +225,158 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* Mobile Right Controls: Avatar/Chat + Hamburger Toggle */}
+        <div className="flex md:hidden items-center gap-2">
+          {!loading && isAuthenticated && user && (
+            <>
+              <Link
+                href="/dashboard/chat"
+                className="relative flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10"
+                title="Messages"
+              >
+                <MessageCircle size={18} className="text-gray-300" />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold px-0.5"
+                    style={{ background: "#D97870", color: "#fff" }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+              <UserProfileMenu />
+            </>
+          )}
+
+          {/* Hamburger Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label="Toggle mobile menu"
+            className="relative z-[99999] p-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer flex items-center justify-center"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div
+            className="
+              absolute top-full left-0 right-0 mt-3
+              bg-[#161925]
+              border border-white/15 rounded-2xl
+              p-5 shadow-2xl z-50
+              flex flex-col gap-4
+              md:hidden
+            "
+          >
+            <div className="flex flex-col gap-1 border-b border-white/10 pb-4">
+              {navItems.map((item) => {
+                const itemClass = "py-2.5 px-3 text-[15px] font-medium text-gray-300 hover:text-white hover:bg-white/5 active:bg-white/10 rounded-lg transition-colors text-left cursor-pointer block w-full";
+                return (
+                  <a
+                    key={item.name}
+                    href={item.isAnchor ? `/#${item.href}` : item.href}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (item.isAnchor) {
+                        const el = document.getElementById(item.href);
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }
+                    }}
+                    className={itemClass}
+                  >
+                    {item.name}
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Mobile Auth Buttons */}
+            <div className="flex flex-col gap-2.5 pt-1">
+              {!loading && isAuthenticated && user ? (
+                <>
+                  {!profileComplete && (
+                    <Link
+                      href="/onboarding"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="
+                        w-full py-2.5 px-4
+                        rounded-xl
+                        font-bold
+                        text-[14px]
+                        text-[#161925]
+                        text-center
+                        bg-[#F8B4C8]
+                        hover:opacity-95
+                        transition
+                      "
+                    >
+                      Complete Profile
+                    </Link>
+                  )}
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="
+                      w-full py-2.5 px-4
+                      rounded-xl
+                      border border-white/20
+                      font-semibold
+                      text-[14px]
+                      text-white
+                      text-center
+                      hover:bg-white/10
+                      transition
+                    "
+                  >
+                    Your Matches Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="
+                      w-full py-2.5 px-4
+                      rounded-xl
+                      border border-white/20
+                      font-semibold
+                      text-[14px]
+                      text-white
+                      text-center
+                      hover:bg-white/10
+                      transition
+                    "
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="
+                      w-full py-2.5 px-4
+                      rounded-xl
+                      font-bold
+                      text-[14px]
+                      text-[#161925]
+                      text-center
+                      bg-[#F8B4C8]
+                      hover:opacity-95
+                      transition
+                    "
+                  >
+                    Join RoomSync
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );

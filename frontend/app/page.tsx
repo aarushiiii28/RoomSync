@@ -2,6 +2,7 @@ import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/how-it-works.tsx";
 import Features from "@/components/landing/features";
+import About from "@/components/landing/About";
 
 export default function Home() {
   return (
@@ -20,6 +21,9 @@ export default function Home() {
 
       {/* Features Section */}
       <Features />
+
+      {/* About Section */}
+      <About />
     </>
   );
 }

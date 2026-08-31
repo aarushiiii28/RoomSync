@@ -369,15 +369,20 @@ async def websocket_endpoint(
                 if delivered:
                     promote_to_delivered(db, saved.id)
                     msg_payload["status"] = MessageStatus.delivered.value
+                    
+                    update_payload = {
+                        "message_id": str(saved.id),
+                        "status": MessageStatus.delivered.value,
+                    }
+                    if client_id:
+                        update_payload["client_id"] = client_id
+                        
                     # Notify sender of delivery upgrade
                     await manager.send_json(
                         current_user.id,
                         {
                             "type": "status_update",
-                            "payload": {
-                                "message_id": str(saved.id),
-                                "status": MessageStatus.delivered.value,
-                            },
+                            "payload": update_payload,
                         },
                     )
 
@@ -455,7 +460,7 @@ def create_conversation(
 
 
 @router.get("/conversations/{conversation_id}/messages", response_model=list[MessageOut])
-def get_conversation_messages(
+async def get_conversation_messages(
     conversation_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
@@ -477,7 +482,7 @@ def get_conversation_messages(
 
 
 @router.post("/conversations/{conversation_id}/read", status_code=status.HTTP_200_OK)
-def read_conversation(
+async def read_conversation(
     conversation_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -496,30 +501,20 @@ def read_conversation(
     updated = mark_conversation_read(db, conversation_id, current_user.id)
 
     if updated > 0:
-        # Notify the sender that their messages were read
+        # Notify the sender that their messages were read — runs in same event loop as WS manager
         other_user_id = (
             conv.user_b_id if conv.user_a_id == current_user.id else conv.user_a_id
         )
-        import asyncio
-
-        async def _notify():
-            await manager.send_json(
-                other_user_id,
-                {
-                    "type": "status_update",
-                    "payload": {
-                        "conversation_id": str(conversation_id),
-                        "event": "read",
-                        "reader_id": str(current_user.id),
-                    },
+        await manager.send_json(
+            other_user_id,
+            {
+                "type": "status_update",
+                "payload": {
+                    "conversation_id": str(conversation_id),
+                    "event": "read",
+                    "reader_id": str(current_user.id),
                 },
-            )
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.ensure_future(_notify())
-        except Exception:
-            pass  # Best-effort WS notification
+            },
+        )
 
     return {"updated": updated}

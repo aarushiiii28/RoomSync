@@ -4,7 +4,7 @@ export default function AIProcessing() {
       <img
         src="/images/perfect_fit.png"
         alt="Compatibility Illustration"
-        className="w-full max-w-[420px] h-auto object-contain"
+        className="w-full max-w-[340px] h-auto object-contain scale-125"
       />
     </div>
   );

@@ -579,23 +579,23 @@ export default function UserProfileMenu() {
         )}
       </button>
 
-      {/* Popover Dropdown Menu (Opens downwards on right side) */}
+      {/* Popover Dropdown Menu */}
       {isOpen && (
         <div
           role="menu"
           className="
-            absolute
-            top-11
-            right-0
+            fixed top-[68px] right-2
+            sm:absolute sm:top-11 sm:right-0
             w-64
+            max-w-[calc(100vw-1rem)]
             rounded-2xl
-            bg-[#161925]/98
+            bg-[#161925]
             border border-white/15
-            shadow-[0_16px_48px_rgba(0,0,0,0.8)]
+            shadow-[0_16px_48px_rgba(0,0,0,0.85)]
             p-3
             animate-in fade-in slide-in-from-top-2
             duration-150
-            z-50
+            z-[9999]
           "
         >
           {menuView === "crop" && cropImageSrc ? (
@@ -803,15 +803,15 @@ export default function UserProfileMenu() {
                   </p>
                 </div>
 
-                {/* Small Compact Photo Options Box (anchored to the left of the menu) */}
+                {/* Small Compact Photo Options Box (drops below the photo button) */}
                 {photoMenuOpen && (
                   <div
                     onClick={(e) => e.stopPropagation()}
                     className="
                       absolute
-                      top-0
-                      right-full
-                      mr-2
+                      top-full
+                      left-0
+                      mt-2
                       w-48
                       rounded-xl
                       bg-[#1e2332]
@@ -819,7 +819,7 @@ export default function UserProfileMenu() {
                       shadow-[0_12px_32px_rgba(0,0,0,0.85)]
                       p-1.5
                       z-50
-                      animate-in fade-in slide-in-from-right-2
+                      animate-in fade-in slide-in-from-top-2
                       duration-150
                     "
                   >

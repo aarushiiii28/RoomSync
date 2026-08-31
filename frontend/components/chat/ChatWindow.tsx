@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { SmilePlus, Send, X } from "lucide-react";
+import { SmilePlus, Send, X, ArrowLeft } from "lucide-react";
 import { Message, getMessages, markAsRead } from "@/services/chat";
 import { StatusUpdate } from "@/hooks/useChatWebSocket";
 import MessageBubble from "./MessageBubble";
@@ -20,6 +20,7 @@ interface Props {
   onMessage: (handler: (msg: Message) => void) => void;
   onStatusUpdate: (handler: (update: StatusUpdate) => void) => void;
   theme?: "dark" | "light";
+  onBack?: () => void;
 }
 
 export default function ChatWindow({
@@ -30,6 +31,7 @@ export default function ChatWindow({
   onMessage,
   onStatusUpdate,
   theme = "dark",
+  onBack,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -66,7 +68,7 @@ export default function ChatWindow({
 
   // Register WebSocket message handler
   useEffect(() => {
-    onMessage((msg) => {
+    const unsubscribe = onMessage((msg) => {
       if (msg.conversation_id !== conversationId) return;
       setMessages((prev) => {
         // If there's a client_id on the incoming message, replace our optimistic message
@@ -82,47 +84,65 @@ export default function ChatWindow({
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      // Auto-mark as read if the message is from the other user
-      if (msg.sender_id !== currentUserId) {
+      // Auto-mark as read if the message is from the other user AND window is focused
+      if (msg.sender_id !== currentUserId && document.visibilityState === "visible") {
         markAsRead(conversationId).catch(() => {});
       }
     });
+    return unsubscribe;
   }, [conversationId, currentUserId, onMessage]);
+
+  // Mark as read when window comes into focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        markAsRead(conversationId).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [conversationId]);
 
   // Register status update handler
   useEffect(() => {
-    onStatusUpdate((update) => {
-      if (update.message_id) {
+    const unsubscribe = onStatusUpdate((update) => {
+      // Handle delivered/sent status change for a specific message
+      if (update.message_id && update.status) {
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === update.message_id && update.status
-              ? { ...m, status: update.status }
-              : m
-          )
+          prev.map((m) => {
+            const matchById = m.id === update.message_id;
+            const matchByClientId = update.client_id && m.client_id === update.client_id;
+            if (matchById || matchByClientId) {
+              return { ...m, id: update.message_id!, status: update.status! };
+            }
+            return m;
+          })
         );
-      } else if (update.event === "queue_failed" && update.client_ids) {
-        // Mark all exhausted queue messages as failed
-        setMessages((prev) =>
-          prev.map((m) =>
+      }
+      
+      // Handle queue_failed event (all optimistically queued messages failed)
+      if (update.event === "queue_failed" && update.client_ids) {
+        setMessages((prev) => 
+          prev.map((m) => 
             m.client_id && update.client_ids?.includes(m.client_id)
               ? { ...m, status: "failed" }
               : m
           )
         );
-      } else if (
-        update.conversation_id === conversationId &&
-        update.event === "read"
-      ) {
-        // Other user read all messages
-        setMessages((prev) =>
+      }
+      
+      // Handle read event — the other person opened and read the conversation
+      if (update.event === "read" && update.conversation_id === conversationId) {
+         setMessages((prev) =>
           prev.map((m) =>
-            m.sender_id === currentUserId && m.status !== "read"
+            m.sender_id === currentUserId && (m.status === "sent" || m.status === "delivered")
               ? { ...m, status: "read" }
               : m
           )
         );
       }
     });
+    return unsubscribe;
   }, [conversationId, currentUserId, onStatusUpdate]);
 
   // Scroll to bottom when new messages arrive
@@ -145,7 +165,10 @@ export default function ChatWindow({
     const trimmed = input.trim();
     if (!trimmed) return;
     
-    const clientId = crypto.randomUUID();
+    const clientId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : 'temp_' + Math.random().toString(36).substring(2, 15);
+      
     const optimisticMsg: Message = {
       id: clientId, // Temporary ID
       client_id: clientId,
@@ -198,49 +221,57 @@ export default function ChatWindow({
     <div className="flex flex-col h-full" style={{ background: theme === "dark" ? "#2D3246" : "#F3F4F6" }}>
       {/* Header */}
       <div
-        className="flex items-center justify-between px-5 py-4 shrink-0"
-        style={{
-          borderBottom: theme === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
-          background: theme === "dark" ? "rgba(45,50,70,0.6)" : "rgba(255,255,255,0.8)",
-          backdropFilter: "blur(12px)",
-        }}
+        className="px-4 py-3.5 flex items-center justify-between shrink-0"
+        style={{ borderBottom: theme === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)" }}
       >
-        <Link 
-          href={`/dashboard/matches/${otherUser.id}`}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-        >
-          {otherUser.photo_url ? (
-            <Image
-              src={otherUser.photo_url}
-              alt={displayName}
-              width={36}
-              height={36}
-              className="rounded-full object-cover shrink-0 border border-white/10"
-            />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
-              style={{
-                background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
-                color: "#F8ECE8",
-              }}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="md:hidden p-1.5 -ml-1 text-gray-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+              title="Back to conversations"
             >
-              {displayName.slice(0, 2).toUpperCase()}
-            </div>
+              <ArrowLeft size={18} />
+            </button>
           )}
-          <div>
-            <p className="text-[14px] font-semibold" style={{ color: theme === "dark" ? "#F8ECE8" : "#1F2937" }}>
-              {displayName}
-            </p>
-          </div>
-        </Link>
+
+          <Link
+            href={`/dashboard/matches/${otherUser.id}`}
+            className="flex items-center gap-2.5 sm:gap-3 hover:opacity-80 transition-opacity"
+          >
+            {otherUser.photo_url ? (
+              <Image
+                src={otherUser.photo_url}
+                alt={displayName}
+                width={36}
+                height={36}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-white/10"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[11px] sm:text-[12px] font-bold shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
+                  color: "#F8ECE8",
+                }}
+              >
+                {displayName.slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="text-[13.5px] sm:text-[14px] font-semibold truncate max-w-[140px] sm:max-w-[200px]" style={{ color: theme === "dark" ? "#F8ECE8" : "#1F2937" }}>
+                {displayName}
+              </p>
+            </div>
+          </Link>
+        </div>
         
         <Link
           href="/dashboard"
-          className="text-[13px] font-medium hover:underline flex items-center gap-1"
+          className="text-[12px] sm:text-[13px] font-medium hover:underline flex items-center gap-1 shrink-0"
           style={{ color: theme === "dark" ? "#9CA3AF" : "#6B7280" }}
         >
-          &larr; Back To Matches
+          &larr; <span className="hidden sm:inline">Back To</span> Matches
         </Link>
       </div>
 
@@ -337,6 +368,7 @@ export default function ChatWindow({
           {/* Send button */}
           <button
             onClick={handleSend}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={!input.trim()}
             className="p-1.5 rounded-lg transition-all shrink-0 self-end mb-0.5"
             style={{
@@ -349,10 +381,6 @@ export default function ChatWindow({
             <Send size={18} />
           </button>
         </div>
-
-        <p className="text-[10px] mt-1 text-right" style={{ color: theme === "dark" ? "#4b5563" : "#9CA3AF" }}>
-          Press Enter to send · Shift+Enter for new line
-        </p>
       </div>
     </div>
   );

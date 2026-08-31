@@ -4,11 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ChevronRight, MessageSquare } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { CandidateMatchItem } from "@/types/matching";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { tokenStorage } from "@/services/token";
 
 export const PREDICTION_CONFIG = {
   High: {
@@ -37,33 +34,6 @@ interface MatchCardProps {
 }
 
 export default function MatchCard({ candidate, index }: MatchCardProps) {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [startingChat, setStartingChat] = React.useState(false);
-
-  const handleStartChat = async (e: React.MouseEvent) => {
-    e.preventDefault(); // prevent triggering the Link
-    e.stopPropagation();
-    if (!user) return;
-    try {
-      setStartingChat(true);
-      const token = tokenStorage.getAccessToken();
-      const res = await fetch(
-        `http://localhost:8000/api/chat/conversations/user/${candidate.candidate_id}`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to start chat");
-      const conv = await res.json();
-      router.push(`/dashboard/chat/${conv.id}`);
-    } catch (err) {
-      console.error("Error starting chat:", err);
-    } finally {
-      setStartingChat(false);
-    }
-  };
   const pred = candidate.prediction as "High" | "Medium" | "Low";
   const cfg = PREDICTION_CONFIG[pred] ?? PREDICTION_CONFIG.Medium;
 
@@ -105,12 +75,12 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
       {/* ── Clickable Match Row Navigating to Match Profile ── */}
       <Link
         href={`/dashboard/matches/${candidate.candidate_id}`}
-        className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left select-none hover:bg-[#F8ECE8]/40 transition-colors block cursor-pointer"
+        className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-4 text-left select-none hover:bg-[#F8ECE8]/40 transition-colors block cursor-pointer"
       >
-        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
           {/* Profile Picture (Circular format) */}
           <div
-            className="relative w-12 h-12 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center shadow-xs"
+            className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center shadow-xs"
             style={{
               border: "1.5px solid #EBD6CF",
               background: "#F6D7CF",
@@ -125,7 +95,7 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
                 sizes="48px"
               />
             ) : (
-              <span className="text-lg font-bold" style={{ color: "#494F66" }}>
+              <span className="text-base sm:text-lg font-bold" style={{ color: "#494F66" }}>
                 {(candidate.first_name?.[0] ?? "?").toUpperCase()}
               </span>
             )}
@@ -134,31 +104,31 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
           {/* Name (Enlarged) + Age and Place of living */}
           <div className="min-w-0 flex-1">
             <h3
-              className="text-[17px] sm:text-[19px] font-bold truncate tracking-tight group-hover:text-[#D97870] transition-colors"
+              className="text-[15.5px] sm:text-[19px] font-bold truncate tracking-tight group-hover:text-[#D97870] transition-colors"
               style={{ color: "#2D3246" }}
             >
               {displayName}
             </h3>
             {ageAndLocation ? (
               <p
-                className="text-[13px] font-medium mt-0.5 truncate"
+                className="text-[12px] sm:text-[13px] font-medium mt-0.5 truncate"
                 style={{ color: "#494F66" }}
               >
                 {ageAndLocation}
               </p>
             ) : (
-              <p className="text-[13px] font-medium mt-0.5 truncate text-zinc-400">
+              <p className="text-[12px] sm:text-[13px] font-medium mt-0.5 truncate text-zinc-400">
                 Location & Age not specified
               </p>
             )}
           </div>
         </div>
 
-        {/* Right side: Badge with equal fixed length + Navigation arrow */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Right side: Badge with equal fixed length + Message button + Navigation arrow */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Prediction badge with equal fixed width w-20 */}
           <div
-            className="w-20 h-7 py-0.5 flex items-center justify-center gap-1.5 rounded-full text-[11px] font-bold"
+            className="w-18 sm:w-20 h-6 sm:h-7 py-0.5 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full text-[10px] sm:text-[11px] font-bold"
             style={{
               background: cfg.bg,
               border: `1.5px solid ${cfg.border}`,
@@ -174,22 +144,8 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
             <span>{pred}</span>
           </div>
 
-          <button
-            onClick={handleStartChat}
-            disabled={startingChat}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50"
-            style={{
-              background: "rgba(217,120,112,0.15)",
-              color: "#D97870",
-              border: "1px solid rgba(217,120,112,0.3)",
-            }}
-            title="Message"
-          >
-            <MessageSquare size={14} />
-          </button>
-
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-200"
+            className="hidden sm:flex w-7 h-7 rounded-full items-center justify-center group-hover:translate-x-0.5 transition-all duration-200"
             style={{
               background: "#F8ECE8",
               color: "#494F66",

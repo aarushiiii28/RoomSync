@@ -67,7 +67,7 @@ export default function MessageBubble({ message, isMine, onRetry, theme = "dark"
   const isFailed = message.status === "failed";
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1.5`}>
-      <div className="flex flex-col items-end">
+      <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
         <div
           className={`relative w-fit min-w-[5.5rem] max-w-[72%] px-3.5 pt-2 pb-6 rounded-2xl text-[14px] leading-relaxed break-words ${isFailed ? "opacity-75" : ""}`}
           style={{
@@ -85,7 +85,7 @@ export default function MessageBubble({ message, isMine, onRetry, theme = "dark"
           }}
         >
           {/* Message content */}
-          <div className={`whitespace-pre-wrap break-words ${isMine ? "text-right" : "text-left"}`}>
+          <div className="whitespace-pre-wrap break-words text-left">
             {message.content}
           </div>
 

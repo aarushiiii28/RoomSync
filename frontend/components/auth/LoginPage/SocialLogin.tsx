@@ -1,55 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { tokenStorage } from "@/services/token";
 
 export default function SocialLogin() {
-  const handleGoogleLogin = () => {
-    const domain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-    const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
-    
-    // Clear any previous session tokens
-    tokenStorage.clearTokens();
+  const domain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+  const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
 
-    if (!domain || !clientId) {
-      console.error("Missing Cognito environment variables for Google login");
-      return;
-    }
+  const [authUrl, setAuthUrl] = useState<string>("#");
 
-    const redirectUri = typeof window !== "undefined" 
-      ? `${window.location.origin}/auth/callback` 
-      : "http://localhost:3000/auth/callback";
-
-    // Adding prompt=select_account forces Google to show the account picker
-    const authorizeUrl = `https://${domain}/oauth2/authorize?identity_provider=Google&prompt=select_account&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email+openid+profile`;
-
-    window.location.href = authorizeUrl;
-  };
+  useEffect(() => {
+    if (!domain || !clientId) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const redirectUri = `${origin}/auth/callback`;
+    const url = `https://${domain}/oauth2/authorize?identity_provider=Google&prompt=select_account&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email+openid+profile`;
+    setAuthUrl(url);
+  }, [domain, clientId]);
 
   return (
-    <button
-      type="button"
-      onClick={handleGoogleLogin}
+    <a
+      href={authUrl}
+      onClick={() => {
+        tokenStorage.clearTokens();
+      }}
       className="
         w-full
         h-12
-
         rounded-lg
-
         border border-white/5
-
         bg-[#0d1017]
-
         flex items-center justify-center gap-2.5
-
         text-white
         text-[14px]
         font-medium
-
         transition-all duration-200
-
         hover:bg-[#11141d]
         hover:border-white/10
         active:scale-[0.98]
+        cursor-pointer
       "
     >
       <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -60,6 +48,6 @@ export default function SocialLogin() {
       </svg>
 
       Continue with Google
-    </button>
+    </a>
   );
 }

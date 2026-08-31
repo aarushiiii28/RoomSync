@@ -13,6 +13,7 @@ export interface StatusUpdate {
   reader_id?: string;
   status?: "sent" | "delivered" | "read" | "failed";
   client_ids?: string[];
+  client_id?: string;
 }
 
 interface UseChatWebSocketReturn {
@@ -25,8 +26,8 @@ interface UseChatWebSocketReturn {
 export function useChatWebSocket(): UseChatWebSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const [wsStatus, setWsStatus] = useState<WsStatus>("disconnected");
-  const messageHandlerRef = useRef<((msg: Message) => void) | null>(null);
-  const statusHandlerRef = useRef<((update: StatusUpdate) => void) | null>(null);
+  const messageHandlersRef = useRef<Set<(msg: Message) => void>>(new Set());
+  const statusHandlersRef = useRef<Set<(update: StatusUpdate) => void>>(new Set());
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldConnectRef = useRef(true);
   const reconnectAttemptRef = useRef(0);
@@ -40,7 +41,6 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
 
     const url = getChatWebSocketUrl();
     if (!url.includes("token=") || url.endsWith("token=")) {
-      // No token — user not logged in, don't connect
       setWsStatus("disconnected");
       return;
     }
@@ -56,7 +56,6 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      // Flush queue
       const queue = [...messageQueueRef.current];
       messageQueueRef.current = [];
       queue.forEach((msg) => {
@@ -72,10 +71,10 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     ws.onmessage = (event) => {
       try {
         const frame = JSON.parse(event.data);
-        if (frame.type === "message" && messageHandlerRef.current) {
-          messageHandlerRef.current(frame.payload as Message);
-        } else if (frame.type === "status_update" && statusHandlerRef.current) {
-          statusHandlerRef.current(frame.payload as StatusUpdate);
+        if (frame.type === "message") {
+          messageHandlersRef.current.forEach(handler => handler(frame.payload as Message));
+        } else if (frame.type === "status_update") {
+          statusHandlersRef.current.forEach(handler => handler(frame.payload as StatusUpdate));
         }
       } catch {
         // ignore malformed frames
@@ -90,11 +89,10 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
       wsRef.current = null;
       if (shouldConnectRef.current) {
         if (reconnectAttemptRef.current >= 5) {
-          // Exhausted attempts, mark queue as failed
           setWsStatus("disconnected");
           const failedIds = messageQueueRef.current.map((m) => m.clientId).filter(Boolean) as string[];
-          if (failedIds.length > 0 && statusHandlerRef.current) {
-            statusHandlerRef.current({ event: "queue_failed", client_ids: failedIds });
+          if (failedIds.length > 0) {
+            statusHandlersRef.current.forEach(handler => handler({ event: "queue_failed", client_ids: failedIds }));
           }
           messageQueueRef.current = [];
           return;
@@ -129,19 +127,24 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
       );
       return true;
     } else if (shouldConnectRef.current) {
-      // Queue it if we're trying to reconnect
       messageQueueRef.current.push({ conversationId, content, clientId });
       return true;
     }
-    return false; // Total failure
+    return false;
   }, []);
 
   const onMessage = useCallback((handler: (msg: Message) => void) => {
-    messageHandlerRef.current = handler;
+    messageHandlersRef.current.add(handler);
+    return () => {
+      messageHandlersRef.current.delete(handler);
+    };
   }, []);
 
   const onStatusUpdate = useCallback((handler: (update: StatusUpdate) => void) => {
-    statusHandlerRef.current = handler;
+    statusHandlersRef.current.add(handler);
+    return () => {
+      statusHandlersRef.current.delete(handler);
+    };
   }, []);
 
   return { wsStatus, sendMessage, onMessage, onStatusUpdate };

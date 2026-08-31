@@ -13,6 +13,7 @@ export default function FeatureCard({ feature }: Props) {
       whileHover={{
         y: -4,
         scale: 1.015,
+        boxShadow: "0 0 32px 6px rgba(244, 114, 182, 0.28), 0 0 60px 12px rgba(244, 114, 182, 0.10)",
       }}
       transition={{
         duration: 0.25,
@@ -30,8 +31,9 @@ export default function FeatureCard({ feature }: Props) {
         text-center
         h-full
         transition-colors
-        hover:border-pink-500/30
+        hover:border-pink-500/40
         hover:bg-[#151f2c]
+        cursor-default
       "
     >
       <div className="h-32 md:h-36 w-full flex items-center justify-center relative">

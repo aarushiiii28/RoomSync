@@ -46,7 +46,7 @@ export default function ChatPage() {
 
   // Update unread counts when a new message arrives via WS
   useEffect(() => {
-    onMessage((msg) => {
+    const unsubscribe = onMessage((msg) => {
       setConversations((prev) =>
         prev.map((conv) => {
           if (conv.id !== msg.conversation_id) return conv;
@@ -67,6 +67,8 @@ export default function ChatPage() {
         })
       );
     });
+    
+    return unsubscribe;
   }, [onMessage, activeConversation?.id, user?.id]);
 
   const handleSelectConversation = (conv: Conversation) => {
@@ -86,15 +88,19 @@ export default function ChatPage() {
         <Navbar />
 
         <div
-          className="flex"
+          className="flex flex-col md:flex-row relative overflow-hidden"
           style={{ height: "calc(100vh - 64px)", marginTop: "64px" }}
         >
-          {/* Sidebar */}
+          {/* Sidebar: Full width on mobile when no conversation active, w-80 on desktop */}
           <aside
-            className="w-80 shrink-0 flex flex-col transition-colors duration-300"
+            className={`
+              w-full md:w-80 shrink-0 flex flex-col transition-colors duration-300
+              ${activeConversation ? "hidden md:flex" : "flex"}
+            `}
             style={{
               borderRight: theme === "dark" ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
               background: theme === "dark" ? "rgba(25,28,40,0.95)" : "rgba(255,255,255,0.95)",
+              height: "100%",
             }}
           >
             {/* Sidebar header */}
@@ -141,8 +147,14 @@ export default function ChatPage() {
             </div>
           </aside>
 
-          {/* Chat area */}
-          <main className="flex-1 min-w-0">
+          {/* Chat area: Full width on mobile when conversation is active, flex-1 on desktop */}
+          <main
+            className={`
+              flex-1 min-w-0 flex-col
+              ${activeConversation ? "flex" : "hidden md:flex"}
+            `}
+            style={{ height: "100%" }}
+          >
             {activeConversation && user ? (
               <ChatWindow
                 key={activeConversation.id}
@@ -153,9 +165,10 @@ export default function ChatPage() {
                 onMessage={onMessage}
                 onStatusUpdate={onStatusUpdate}
                 theme={theme}
+                onBack={() => setActiveConversation(null)}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-center">
                 <MessageCircle size={48} style={{ color: "rgba(139,146,165,0.3)" }} />
                 <p className="text-[15px]" style={{ color: "#8b92a5" }}>
                   Select a conversation to start chatting

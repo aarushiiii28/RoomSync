@@ -5,7 +5,7 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="relative py-20 md:py-28"
+      className="relative pt-16 pb-16 md:pt-24 md:pb-24"
     >
       <div className="mx-auto max-w-6xl px-6">
         <FeaturesHeader />

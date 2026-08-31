@@ -254,109 +254,117 @@ export default function MatchDetailPage() {
             >
               {/* ── Top Header Banner ── */}
               <div
-                className="p-8 sm:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative"
+                className="p-5 sm:p-7 md:p-10 flex flex-row items-start gap-2 sm:gap-3 relative"
                 style={{ background: "#494F66" }}
               >
-                <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
-                  {/* Clean Back Arrow without box */}
-                  <Link
-                    href="/dashboard"
-                    className="text-white/80 hover:text-white transition-all -ml-1 sm:-ml-2 p-1.5 flex items-center justify-center cursor-pointer group shrink-0"
-                    title="Back to Matches"
-                  >
-                    <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
-                  </Link>
+                {/* Back Arrow — vertically centered with the photo */}
+                <Link
+                  href="/dashboard"
+                  className="text-white/80 hover:text-white transition-all -ml-1 p-1.5 mt-1 flex items-center justify-center cursor-pointer group shrink-0"
+                  title="Back to Matches"
+                >
+                  <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                </Link>
 
-                  {/* Circular Profile Picture */}
-                  <div
-                    className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center shadow-lg"
-                    style={{
-                      border: "3px solid #EBD6CF",
-                      background: "#F6D7CF",
-                    }}
-                  >
-                    {candidate.profile_photo_url ? (
-                      <Image
-                        src={candidate.profile_photo_url}
-                        alt={displayName}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                      />
-                    ) : (
-                      <span className="text-3xl font-bold font-sans" style={{ color: "#494F66" }}>
-                        {(candidate.first_name?.[0] ?? "?").toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+                {/* Right column: [photo + name] then [details] — all left-aligned */}
+                <div className="flex flex-col gap-3 min-w-0 flex-1">
 
-                  {/* Name and Summary Info */}
-                  <div className="min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-tight truncate">
-                      {displayName}
-                    </h1>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-[13px] font-medium text-[#A6ACBE]">
-                      {candidate.age && (
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-[#F6D7CF]" />
-                          <span>{candidate.age} years old</span>
-                        </span>
-                      )}
-                      {candidate.city && (
-                        <span className="flex items-center gap-1.5">
-                          <MapPin size={14} className="text-[#F6D7CF]" />
-                          <span>{candidate.city}</span>
-                        </span>
-                      )}
-                      {candidate.gender && (
-                        <span className="flex items-center gap-1.5 capitalize">
-                          <UserIcon size={14} className="text-[#F6D7CF]" />
-                          <span>{candidate.gender}</span>
-                        </span>
-                      )}
-                      {candidate.occupation && (
-                        <span className="flex items-center gap-1.5">
-                          <Briefcase size={14} className="text-[#F6D7CF]" />
-                          <span>{candidate.occupation}</span>
+                  {/* Row 1: Photo + Name */}
+                  <div className="flex flex-row items-center gap-3 sm:gap-4 min-w-0">
+                    {/* Circular Profile Picture */}
+                    <div
+                      className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center shadow-lg"
+                      style={{
+                        border: "3px solid #EBD6CF",
+                        background: "#F6D7CF",
+                      }}
+                    >
+                      {candidate.profile_photo_url ? (
+                        <Image
+                          src={candidate.profile_photo_url}
+                          alt={displayName}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                      ) : (
+                        <span className="text-xl sm:text-2xl font-bold font-sans" style={{ color: "#494F66" }}>
+                          {(candidate.first_name?.[0] ?? "?").toUpperCase()}
                         </span>
                       )}
                     </div>
 
-                    {/* About line placed directly under info without heading */}
-                    {candidate.bio && candidate.bio.trim().length > 0 && (
-                      <p className="mt-3 text-[13.5px] sm:text-[14px] text-[#F8ECE8]/90 font-normal leading-relaxed max-w-2xl">
-                        {candidate.bio}
-                      </p>
-                    )}
+                    {/* Name — same row as photo */}
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-sans text-white tracking-tight min-w-0 flex-1">
+                      {displayName}
+                    </h1>
                   </div>
-                </div>
 
-                {/* Equal Length Badge (Sleek vertical height, only "High" / "Medium" / "Low") */}
-                <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
-                  <div
-                    className="w-20 h-7 py-0.5 flex items-center justify-center gap-1.5 rounded-full text-[11px] font-bold shadow-xs"
-                    style={{
-                      background: cfg.bg,
-                      border: `1.5px solid ${cfg.border}`,
-                      color: cfg.text,
-                    }}
-                  >
-                    <motion.div
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      animate={{ opacity: [1, 0.3, 1] }}
-                      transition={{ duration: 1.8, repeat: Infinity }}
-                      style={{ background: cfg.dot }}
-                    />
-                    <span>{pred}</span>
+                  {/* Row 2: Details — left edge aligned with photo */}
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-6">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12.5px] sm:text-[13px] font-medium text-[#A6ACBE]">
+                        {candidate.age && (
+                          <span className="flex items-center gap-1.5">
+                            <Calendar size={13} className="text-[#F6D7CF]" />
+                            <span>{candidate.age} yrs</span>
+                          </span>
+                        )}
+                        {candidate.city && (
+                          <span className="flex items-center gap-1.5">
+                            <MapPin size={13} className="text-[#F6D7CF]" />
+                            <span>{candidate.city}</span>
+                          </span>
+                        )}
+                        {candidate.gender && (
+                          <span className="flex items-center gap-1.5 capitalize">
+                            <UserIcon size={13} className="text-[#F6D7CF]" />
+                            <span>{candidate.gender}</span>
+                          </span>
+                        )}
+                        {candidate.occupation && (
+                          <span className="flex items-center gap-1.5">
+                            <Briefcase size={13} className="text-[#F6D7CF]" />
+                            <span>{candidate.occupation}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {candidate.bio && candidate.bio.trim().length > 0 && (
+                        <p className="mt-2.5 text-[13px] sm:text-[14px] text-[#F8ECE8]/90 font-normal leading-relaxed max-w-2xl">
+                          {candidate.bio}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Prediction Badge */}
+                    <div className="flex items-center shrink-0">
+                      <div
+                        className="w-20 h-7 py-0.5 flex items-center justify-center gap-1.5 rounded-full text-[11px] font-bold shadow-xs"
+                        style={{
+                          background: cfg.bg,
+                          border: `1.5px solid ${cfg.border}`,
+                          color: cfg.text,
+                        }}
+                      >
+                        <motion.div
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          animate={{ opacity: [1, 0.3, 1] }}
+                          transition={{ duration: 1.8, repeat: Infinity }}
+                          style={{ background: cfg.dot }}
+                        />
+                        <span>{pred}</span>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
               </div>
 
               {/* ── Main Breakdown Content ── */}
-              <div className="p-7 sm:p-9 lg:p-11 space-y-6">
+              <div className="p-4 sm:p-7 lg:p-11 space-y-6">
                 {/* Compatibility Score & Why This Match Action Button */}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex flex-col items-start gap-0.5">
                     <p
                       className="text-[12px] font-bold uppercase tracking-[0.2em]"
@@ -365,12 +373,12 @@ export default function MatchDetailPage() {
                       Compatibility
                     </p>
                     <p
-                      className="text-4xl sm:text-5xl font-bold font-sans tracking-tight"
+                      className="text-3xl sm:text-4xl md:text-5xl font-bold font-sans tracking-tight"
                       style={{ color: "#2D3246" }}
                     >
                       {Math.round(candidate.rule_based_explainability.rule_score)}
                       <span
-                        className="text-2xl sm:text-3xl font-semibold ml-1"
+                        className="text-xl sm:text-2xl font-semibold ml-1"
                         style={{ color: "#8b92a5" }}
                       >
                         %
@@ -378,11 +386,11 @@ export default function MatchDetailPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleStartChat}
                       disabled={startingChat}
-                      className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 active:scale-[0.98] disabled:opacity-70"
+                      className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 active:scale-[0.98] disabled:opacity-70"
                       style={{
                         background: "rgba(217,120,112,0.15)",
                         color: "#D97870",
@@ -399,7 +407,7 @@ export default function MatchDetailPage() {
 
                     <button
                       onClick={handleToggleBriefing}
-                      className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-95 active:scale-[0.98] cursor-pointer"
+                      className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-95 active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
                       style={{
                         background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
                         color: "#ffffff",

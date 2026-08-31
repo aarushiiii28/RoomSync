@@ -36,7 +36,9 @@ function AuthCallbackContent() {
 
     async function processLogin() {
       try {
-        await googleLogin(code as string);
+        const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+        const redirectUri = `${origin}/auth/callback`;
+        await googleLogin(code as string, redirectUri);
 
         // Check onboarding state
         try {

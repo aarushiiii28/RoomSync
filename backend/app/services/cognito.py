@@ -231,7 +231,7 @@ def cognito_initiate_auth(username: str, password: str) -> Dict[str, Any]:
     except ClientError as exc:
         raise _translate_cognito_error(exc) from exc
 
-def cognito_exchange_code_for_token(code: str) -> Dict[str, Any]:
+def cognito_exchange_code_for_token(code: str, redirect_uri: str | None = None) -> Dict[str, Any]:
     """Exchange OAuth authorization code for tokens via Cognito Hosted UI."""
     if not is_cognito_configured() or not getattr(settings, "COGNITO_DOMAIN", None):
         raise ValueError("Cognito domain not configured for OAuth.")
@@ -239,7 +239,11 @@ def cognito_exchange_code_for_token(code: str) -> Dict[str, Any]:
     domain = settings.COGNITO_DOMAIN.strip()
     client_id = settings.COGNITO_CLIENT_ID.strip()
     client_secret = settings.COGNITO_CLIENT_SECRET.strip()
-    redirect_uri = getattr(settings, "COGNITO_CALLBACK_URL", "http://localhost:3000/auth/callback").strip()
+    
+    if not redirect_uri:
+        redirect_uri = getattr(settings, "COGNITO_CALLBACK_URL", "http://localhost:3000/auth/callback").strip()
+    else:
+        redirect_uri = redirect_uri.strip()
 
     url = f"https://{domain}/oauth2/token"
     

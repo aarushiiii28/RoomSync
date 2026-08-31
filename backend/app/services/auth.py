@@ -203,7 +203,7 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     raise ValueError("Invalid username or password.")
 
 
-def google_login_callback(db: Session, code: str) -> Token:
+def google_login_callback(db: Session, code: str, redirect_uri: str | None = None) -> Token:
     """
     Handle Google OAuth callback:
     1. Exchange auth code for tokens via Cognito
@@ -215,22 +215,24 @@ def google_login_callback(db: Session, code: str) -> Token:
     from jose import jwt
 
     # 1. Exchange code
-    token_resp = cognito_exchange_code_for_token(code)
+    token_resp = cognito_exchange_code_for_token(code, redirect_uri)
     access_token = token_resp.get("access_token")
     id_token = token_resp.get("id_token")
     
     if not access_token and not id_token:
         raise ValueError("Failed to retrieve tokens from Google/Cognito.")
 
-    # 2. Extract user info from id_token claims
+    # 2. Extract user info and sub from id_token claims
     email = None
     username = None
+    sub = None
 
     if id_token:
         try:
             claims = jwt.get_unverified_claims(id_token)
             email = claims.get("email")
             username = claims.get("cognito:username") or claims.get("name") or claims.get("given_name")
+            sub = claims.get("sub")
         except Exception as exc:
             logger.warning("Could not read id_token claims: %s", exc)
 
@@ -239,14 +241,22 @@ def google_login_callback(db: Session, code: str) -> Token:
         email = user_info.get("email")
         if not username:
             username = user_info.get("username")
+        if not sub:
+            sub = user_info.get("sub")
+
+    if not sub and access_token:
+        try:
+            acc_claims = jwt.get_unverified_claims(access_token)
+            sub = acc_claims.get("sub")
+        except Exception:
+            pass
 
     if not email:
         raise ValueError("Google account did not provide an email address.")
 
     clean_email = email.strip().lower()
-    clean_username = username.strip() if username else clean_email.split("@")[0]
 
-    # 3. Sync local database
+    # 3. Sync local database: Match by email first to link to existing native account
     now = datetime.now(timezone.utc)
     user = (
         db.query(User)
@@ -255,11 +265,20 @@ def google_login_callback(db: Session, code: str) -> Token:
     )
 
     if not user:
+        # For a new user, use clean username (avoid raw Google ID prefix)
+        display_name = username.strip() if (username and not username.lower().startswith("google_")) else clean_email.split("@")[0]
+        
+        # Ensure username uniqueness
+        existing_username = db.query(User).filter(func.lower(User.username) == display_name.lower()).first()
+        if existing_username:
+            display_name = f"{display_name}_{int(now.timestamp()) % 10000}"
+
         from uuid import uuid4
         user = User(
             id=uuid4(),
-            username=clean_username,
+            username=display_name,
             email=clean_email,
+            cognito_sub=str(sub) if sub else None,
             email_verified=True,
             is_active=True,
             created_at=now,
@@ -267,6 +286,9 @@ def google_login_callback(db: Session, code: str) -> Token:
         )
         db.add(user)
     else:
+        # Existing native account found (e.g. aarushiiiiii28) - associate session and link cognito_sub
+        if sub:
+            user.cognito_sub = str(sub)
         user.last_login_at = now
         user.email_verified = True
 

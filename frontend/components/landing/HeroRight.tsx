@@ -5,7 +5,7 @@ import AiOrb from "./AiOrb";
 
 export default function HeroRight() {
   return (
-    <div className="flex-1 flex justify-center items-center relative min-h-[400px]">
+    <div className="flex-1 flex justify-center items-center relative min-h-[150px] sm:min-h-[260px] lg:min-h-[400px] w-full">
       {/* Large ambient glow behind everything */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -16,16 +16,11 @@ export default function HeroRight() {
       />
 
       {/* Main composition wrapper */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="relative flex flex-col items-center gap-0 -mt-8"
-      >
-        <div className="relative flex items-center justify-center">
+      <div className="relative flex flex-col items-center gap-0 mt-0 lg:-mt-8">
+        <div className="relative flex items-center justify-center scale-[0.68] sm:scale-85 lg:scale-100 origin-center">
           <AiOrb />
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

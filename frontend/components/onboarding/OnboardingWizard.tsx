@@ -715,7 +715,7 @@ export default function OnboardingWizard() {
 
         {/* Right Main Form Area */}
         <div className="flex-1 flex flex-col justify-between bg-[#F8ECE8]">
-          <div className="p-7 sm:p-9 lg:p-11 flex-1 flex flex-col justify-between">
+          <div className="p-5 sm:p-7 lg:p-11 flex-1 flex flex-col justify-between">
             {/* Top Step Title & Subtitle */}
             <div>
               {/* Notice Banner (e.g. redirected from protected dashboard) */}
@@ -830,39 +830,39 @@ export default function OnboardingWizard() {
           </div>
 
           {/* White Bottom Action Bar */}
-          <div className="px-7 sm:px-9 lg:px-11 py-5 bg-white border-t border-[#EBD6CF] flex items-center justify-between gap-4">
+          <div className="px-4 sm:px-7 lg:px-11 py-4 sm:py-5 bg-white border-t border-[#EBD6CF] flex flex-wrap items-center justify-between gap-3">
             {/* Left side actions: Save and exit on far left, Back directly to its right on steps 2-5 */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 disabled={savingExit || submitting}
                 onClick={handleSaveAndExit}
                 className="
-                  px-7 sm:px-8 py-2.5
+                  px-4 sm:px-7 py-2 sm:py-2.5
                   rounded-full
                   border-2 border-[#8E95AF]
                   bg-white
                   text-[#494F66]
-                  text-[14px]
+                  text-[12.5px] sm:text-[14px]
                   font-semibold
                   hover:bg-[#F8ECE8]
                   transition-all duration-200
                   disabled:opacity-60
                   disabled:cursor-not-allowed
                   cursor-pointer
-                  inline-flex items-center justify-center gap-2
+                  inline-flex items-center justify-center gap-1.5 sm:gap-2
                   select-none
                 "
               >
                 {savingExit ? (
                   <>
-                    <Loader2 size={15} className="animate-spin text-[#494F66]" />
+                    <Loader2 size={14} className="animate-spin text-[#494F66]" />
                     <span>Saving...</span>
                   </>
                 ) : saveExitSuccess ? (
                   <>
-                    <Check size={15} className="text-emerald-600" />
-                    <span className="text-emerald-700 font-medium">Progress saved</span>
+                    <Check size={14} className="text-emerald-600" />
+                    <span className="text-emerald-700 font-medium">Saved</span>
                   </>
                 ) : (
                   "Save and exit"
@@ -875,12 +875,12 @@ export default function OnboardingWizard() {
                   disabled={submitting || savingExit}
                   onClick={handleBack}
                   className="
-                    px-7 sm:px-8 py-2.5
+                    px-4 sm:px-7 py-2 sm:py-2.5
                     rounded-full
                     border-2 border-[#8E95AF]
                     bg-white
                     text-[#494F66]
-                    text-[14px]
+                    text-[12.5px] sm:text-[14px]
                     font-semibold
                     hover:bg-[#F8ECE8]
                     transition-all duration-200
@@ -902,12 +902,12 @@ export default function OnboardingWizard() {
                   disabled={savingExit}
                   onClick={handleContinue}
                   className="
-                    px-9 py-2.5
+                    px-6 sm:px-9 py-2 sm:py-2.5
                     rounded-full
                     bg-[#494F66]
                     hover:bg-[#3D4359]
                     text-white
-                    text-[14px]
+                    text-[13px] sm:text-[14px]
                     font-semibold
                     shadow-md
                     active:scale-[0.98]
@@ -925,31 +925,27 @@ export default function OnboardingWizard() {
                   onClick={handleSubmit}
                   className="
                     flex items-center gap-2
-                    px-9 py-2.5
+                    px-6 sm:px-9 py-2 sm:py-2.5
                     rounded-full
                     bg-[#494F66]
                     hover:bg-[#3D4359]
                     text-white
-                    text-[14px]
+                    text-[13px] sm:text-[14px]
                     font-semibold
                     shadow-md
                     active:scale-[0.98]
                     transition-all duration-200
-                    disabled:opacity-60
-                    disabled:cursor-not-allowed
                     cursor-pointer
+                    disabled:opacity-60
                   "
                 >
                   {submitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Saving...</span>
+                      <Loader2 size={14} className="animate-spin text-[#F6D7CF]" />
+                      <span>Submitting...</span>
                     </>
                   ) : (
-                    <>
-                      <Check size={16} />
-                      <span>Complete Profile</span>
-                    </>
+                    <span>Complete Profile</span>
                   )}
                 </button>
               )}
