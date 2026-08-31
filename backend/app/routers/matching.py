@@ -137,7 +137,7 @@ def get_why_this_match(
 
     try:
         # Step 1-5: Generation (orchestrates retrieval, tag extraction, and generation)
-        (raw_json_str, raw_exp_a, raw_exp_b, summary_a, summary_b, bio_a, bio_b) = generate_match_briefing(
+        (raw_json_str, raw_exp_a, raw_exp_b, summary_a, summary_b, bio_a, bio_b, user_b_name) = generate_match_briefing(
             db=db, 
             user_a_id=current_user.id, 
             user_b_id=candidate_id
@@ -151,7 +151,8 @@ def get_why_this_match(
             tags_a=summary_a,
             tags_b=summary_b,
             bio_a=bio_a,
-            bio_b=bio_b
+            bio_b=bio_b,
+            user_b_name=user_b_name
         )
         return briefing
         

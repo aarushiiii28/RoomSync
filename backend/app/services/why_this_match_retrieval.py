@@ -40,6 +40,13 @@ def get_public_bio(db: Session, user_id: UUID) -> Optional[str]:
         return None
     return user.profile.bio
 
+def get_user_first_name(db: Session, user_id: UUID) -> Optional[str]:
+    """Retrieve the first name of a user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.profile:
+        return None
+    return user.profile.first_name
+
 
 def get_private_expectations(db: Session, user_id: UUID) -> Optional[str]:
     """

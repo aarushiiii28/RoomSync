@@ -7,6 +7,7 @@ from app.services.llm_client import get_groq_client, retry, wait_exponential, st
 from app.services.why_this_match_retrieval import (
     get_user_a_context,
     get_public_bio,
+    get_user_first_name,
     get_shareable_profile_fields,
     get_private_expectations,
     get_xgboost_signal,
@@ -38,15 +39,22 @@ INPUT YOU WILL RECEIVE (as structured JSON):
   user_a's dealbreakers in the "what_they_value", "living_style", "alignment_points",
   or "differences_to_discuss" sections — those describe user_b, and user_a's own
   dealbreakers say nothing about user_b.
+- user_b_name: the candidate's first name. Use it naturally to refer to
+  them throughout your response. ALWAYS refer to user_a as "you"/"your" — this briefing is
+  written directly to them. NEVER use placeholder labels like "User A",
+  "User B", "A", or "B" anywhere in the output — every field should read
+  as natural language addressed to the person reading it. IMPORTANT: ALWAYS use
+  the gender-neutral pronouns "they"/"them"/"their" when referring to user_b.
+  DO NOT infer gender from user_b_name or anything else.
 
 OUTPUT: return ONLY valid JSON matching this schema, nothing else:
 {
   "headline": "<one sentence, <20 words, plain-language summary>",
   "what_they_value": "<1-2 sentences, based only on bio + tags>",
   "living_style": "<1-2 sentences>",
-  "alignment_points": ["<short phrase>", "..."],
-  "differences_to_discuss": ["<short phrase>", "..."],
-  "questions_to_ask": ["<question>", "..."]
+  "alignment_points": ["<short phrase>", "... (MAXIMUM 4 ITEMS)"],
+  "differences_to_discuss": ["<short phrase>", "... (MAXIMUM 4 ITEMS)"],
+  "questions_to_ask": ["<question>", "... (MAXIMUM 4 ITEMS. Include at most 2 dealbreaker-informed questions)"]
 }
 
 HARD RULES — violating any of these is a critical failure:
@@ -192,15 +200,18 @@ def call_groq_generation(payload: Dict[str, Any]) -> str:
                         "living_style": { "type": "string" },
                         "alignment_points": {
                             "type": "array",
-                            "items": { "type": "string" }
+                            "items": { "type": "string" },
+                            "maxItems": 4
                         },
                         "differences_to_discuss": {
                             "type": "array",
-                            "items": { "type": "string" }
+                            "items": { "type": "string" },
+                            "maxItems": 4
                         },
                         "questions_to_ask": {
                             "type": "array",
-                            "items": { "type": "string" }
+                            "items": { "type": "string" },
+                            "maxItems": 4
                         }
                     },
                     "required": [
@@ -236,6 +247,7 @@ def generate_match_briefing(db: Session, user_a_id: UUID, user_b_id: UUID) -> tu
     
     xgboost_signal = get_xgboost_signal(db, user_a_id, user_b_id)
     deal_breakers_a = get_deal_breakers_a(db, user_a_id)
+    user_b_name = get_user_first_name(db, user_b_id)
     
     # 2. Extract tags (Step 3)
     summary_a = extract_lifestyle_tags(bio=user_a_context["bio"], expectations=expectations_a)
@@ -255,9 +267,10 @@ def generate_match_briefing(db: Session, user_a_id: UUID, user_b_id: UUID) -> tu
         "xgboost_label": xgboost_signal["compatibility_label"],
         "feature_signals": xgboost_signal["feature_signals"],
         "user_a_deal_breakers": deal_breakers_a,
+        "user_b_name": user_b_name
     }
     
     # 4. Generate
     raw_json = call_groq_generation(payload)
     
-    return (raw_json, expectations_a, expectations_b, summary_a, summary_b, user_a_context["bio"], user_b_bio)
+    return (raw_json, expectations_a, expectations_b, summary_a, summary_b, user_a_context["bio"], user_b_bio, user_b_name)

@@ -183,3 +183,11 @@ class HouseholdResponsibilityPreference(str, enum.Enum):
     flexible = "flexible"
     shared_equally = "shared_equally"
     clearly_divided = "clearly_divided"
+
+
+class MessageStatus(str, enum.Enum):
+    """Delivery status of a chat message."""
+
+    sent = "sent"
+    delivered = "delivered"
+    read = "read"

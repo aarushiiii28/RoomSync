@@ -203,6 +203,83 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     raise ValueError("Invalid username or password.")
 
 
+def google_login_callback(db: Session, code: str) -> Token:
+    """
+    Handle Google OAuth callback:
+    1. Exchange auth code for tokens via Cognito
+    2. Retrieve user info using id_token claims and access token
+    3. Ensure user exists in our local DB
+    4. Return tokens to client
+    """
+    from app.services.cognito import cognito_exchange_code_for_token, cognito_get_user
+    from jose import jwt
+
+    # 1. Exchange code
+    token_resp = cognito_exchange_code_for_token(code)
+    access_token = token_resp.get("access_token")
+    id_token = token_resp.get("id_token")
+    
+    if not access_token and not id_token:
+        raise ValueError("Failed to retrieve tokens from Google/Cognito.")
+
+    # 2. Extract user info from id_token claims
+    email = None
+    username = None
+
+    if id_token:
+        try:
+            claims = jwt.get_unverified_claims(id_token)
+            email = claims.get("email")
+            username = claims.get("cognito:username") or claims.get("name") or claims.get("given_name")
+        except Exception as exc:
+            logger.warning("Could not read id_token claims: %s", exc)
+
+    if not email and access_token:
+        user_info = cognito_get_user(access_token)
+        email = user_info.get("email")
+        if not username:
+            username = user_info.get("username")
+
+    if not email:
+        raise ValueError("Google account did not provide an email address.")
+
+    clean_email = email.strip().lower()
+    clean_username = username.strip() if username else clean_email.split("@")[0]
+
+    # 3. Sync local database
+    now = datetime.now(timezone.utc)
+    user = (
+        db.query(User)
+        .filter(func.lower(User.email) == clean_email)
+        .first()
+    )
+
+    if not user:
+        from uuid import uuid4
+        user = User(
+            id=uuid4(),
+            username=clean_username,
+            email=clean_email,
+            email_verified=True,
+            is_active=True,
+            created_at=now,
+            last_login_at=now,
+        )
+        db.add(user)
+    else:
+        user.last_login_at = now
+        user.email_verified = True
+
+    db.commit()
+
+    return Token(
+        access_token=access_token or id_token,
+        refresh_token=token_resp.get("refresh_token", ""),
+        token_type=token_resp.get("token_type", "bearer"),
+    )
+
+
+
 def verify_email_otp(
     db: Session,
     email_or_username: str,

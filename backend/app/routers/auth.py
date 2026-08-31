@@ -19,6 +19,7 @@ from app.schemas.user import UserLogin, UserRegister, UserResponse
 from app.services.auth import (
     confirm_forgot_password_user,
     forgot_password_user,
+    google_login_callback,
     login_user,
     logout_all_sessions,
     logout_session,
@@ -27,6 +28,10 @@ from app.services.auth import (
     resend_verification_otp,
     verify_email_otp,
 )
+from pydantic import BaseModel
+
+class GoogleLoginRequest(BaseModel):
+    code: str
 
 router = APIRouter(
     prefix="/auth",
@@ -266,4 +271,27 @@ def confirm_forgot_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/google-callback",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+)
+def google_callback(
+    request_data: GoogleLoginRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        return google_login_callback(db=db, code=request_data.code)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Authentication error: {str(exc)}",
         ) from exc

@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     COGNITO_USER_POOL_ID: str = ""
     COGNITO_CLIENT_ID: str = ""
     COGNITO_CLIENT_SECRET: str = ""
+    COGNITO_DOMAIN: str = ""
+    COGNITO_CALLBACK_URL: str = "http://localhost:3000/auth/callback"
     
     FRONTEND_URL: str = "http://localhost:3000"
     GROQ_API_KEY: str = ""

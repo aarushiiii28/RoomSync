@@ -44,6 +44,17 @@ export async function login(data: LoginData) {
   return response.data;
 }
 
+export async function googleLogin(code: string) {
+  const response = await api.post("/auth/google-callback", { code });
+
+  tokenStorage.setTokens(
+    response.data.access_token,
+    response.data.refresh_token
+  );
+
+  return response.data;
+}
+
 export async function refreshToken() {
   const refresh_token = tokenStorage.getRefreshToken();
 
@@ -56,6 +67,20 @@ export async function refreshToken() {
     response.data.refresh_token
   );
 
+  return response.data;
+}
+
+export async function forgotPassword(email: string) {
+  const response = await api.post("/auth/forgot-password", { email });
+  return response.data;
+}
+
+export async function confirmForgotPassword(email: string, confirmation_code: string, new_password: string) {
+  const response = await api.post("/auth/confirm-forgot-password", {
+    email,
+    confirmation_code,
+    new_password,
+  });
   return response.data;
 }
 

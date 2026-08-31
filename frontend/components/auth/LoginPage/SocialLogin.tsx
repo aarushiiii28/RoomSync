@@ -1,7 +1,34 @@
+"use client";
+
+import { tokenStorage } from "@/services/token";
+
 export default function SocialLogin() {
+  const handleGoogleLogin = () => {
+    const domain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+    const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
+    
+    // Clear any previous session tokens
+    tokenStorage.clearTokens();
+
+    if (!domain || !clientId) {
+      console.error("Missing Cognito environment variables for Google login");
+      return;
+    }
+
+    const redirectUri = typeof window !== "undefined" 
+      ? `${window.location.origin}/auth/callback` 
+      : "http://localhost:3000/auth/callback";
+
+    // Adding prompt=select_account forces Google to show the account picker
+    const authorizeUrl = `https://${domain}/oauth2/authorize?identity_provider=Google&prompt=select_account&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email+openid+profile`;
+
+    window.location.href = authorizeUrl;
+  };
+
   return (
     <button
       type="button"
+      onClick={handleGoogleLogin}
       className="
         w-full
         h-12

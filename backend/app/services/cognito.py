@@ -231,6 +231,48 @@ def cognito_initiate_auth(username: str, password: str) -> Dict[str, Any]:
     except ClientError as exc:
         raise _translate_cognito_error(exc) from exc
 
+def cognito_exchange_code_for_token(code: str) -> Dict[str, Any]:
+    """Exchange OAuth authorization code for tokens via Cognito Hosted UI."""
+    if not is_cognito_configured() or not getattr(settings, "COGNITO_DOMAIN", None):
+        raise ValueError("Cognito domain not configured for OAuth.")
+
+    domain = settings.COGNITO_DOMAIN.strip()
+    client_id = settings.COGNITO_CLIENT_ID.strip()
+    client_secret = settings.COGNITO_CLIENT_SECRET.strip()
+    redirect_uri = getattr(settings, "COGNITO_CALLBACK_URL", "http://localhost:3000/auth/callback").strip()
+
+    url = f"https://{domain}/oauth2/token"
+    
+    auth_header = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("utf-8")
+    
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": f"Basic {auth_header}",
+    }
+    
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "code": code.strip(),
+        "redirect_uri": redirect_uri,
+    }
+    
+    try:
+        resp = requests.post(url, headers=headers, data=data, timeout=10)
+        resp.raise_for_status()
+        auth_result = resp.json()
+        return {
+            "access_token": auth_result.get("access_token"),
+            "id_token": auth_result.get("id_token"),
+            "refresh_token": auth_result.get("refresh_token"),
+            "token_type": auth_result.get("token_type", "bearer"),
+            "expires_in": auth_result.get("expires_in", 3600),
+        }
+    except requests.exceptions.RequestException as exc:
+        logger.error("Cognito oauth2/token error: %s", exc)
+        if hasattr(exc, "response") and exc.response is not None:
+            logger.error("Response: %s", exc.response.text)
+        raise ValueError("Failed to authenticate with Google.")
 
 def cognito_get_user(access_token: str) -> Dict[str, Any]:
     """Retrieve user attributes using Cognito AccessToken via GetUser API."""

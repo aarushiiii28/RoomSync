@@ -25,6 +25,7 @@ import Navbar from "@/components/layout/Navbar";
 import { getRecommendations, getWhyThisMatch } from "@/services/matching";
 import { PREDICTION_CONFIG } from "@/components/dashboard/MatchCard";
 import type { CandidateMatchItem, MatchBriefingResponse } from "@/types/matching";
+import { createOrOpenConversation } from "@/services/chat";
 
 const SIGNAL_LABELS: Record<string, string> = {
   sleep_compatibility: "Sleep Compatibility",
@@ -54,6 +55,7 @@ export default function MatchDetailPage() {
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [briefingError, setBriefingError] = useState<string | null>(null);
   const [isForbidden, setIsForbidden] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
 
   // AbortController ref to cancel in-flight briefing requests on navigation
   const briefingAbortRef = useRef<AbortController | null>(null);
@@ -141,6 +143,24 @@ export default function MatchDetailPage() {
       if (targetCandidateId === candidateId && !controller.signal.aborted) {
         setBriefingLoading(false);
       }
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!candidateId || startingChat) return;
+    setStartingChat(true);
+    try {
+      const conv = await createOrOpenConversation(candidateId);
+      router.push(`/dashboard/chat/${conv.id}`);
+    } catch (err: any) {
+      console.error("Failed to start chat:", err);
+      if (err.response?.status === 403) {
+        alert("You are no longer authorized to match with this candidate.");
+      } else {
+        alert("Unable to start conversation. Please try again.");
+      }
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -358,17 +378,37 @@ export default function MatchDetailPage() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={handleToggleBriefing}
-                    className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-95 active:scale-[0.98] cursor-pointer"
-                    style={{
-                      background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                    }}
-                  >
-                    Why This Match?
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleStartChat}
+                      disabled={startingChat}
+                      className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 active:scale-[0.98] disabled:opacity-70"
+                      style={{
+                        background: "rgba(217,120,112,0.15)",
+                        color: "#D97870",
+                        border: "1px solid rgba(217,120,112,0.3)",
+                      }}
+                    >
+                      {startingChat ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <MessageSquare size={16} />
+                      )}
+                      Message
+                    </button>
+
+                    <button
+                      onClick={handleToggleBriefing}
+                      className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-95 active:scale-[0.98] cursor-pointer"
+                      style={{
+                        background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                      }}
+                    >
+                      Why This Match?
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Why This Match Section (Opens directly below Score & Button) ── */}

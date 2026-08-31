@@ -51,7 +51,7 @@ def check_similarity(output_text: str, raw_expectations: Optional[str], max_over
             
         raise MatchValidationException("Similarity validation failed: Output is too similar to raw private expectations text.")
 
-def check_groundedness(output_text: str, input_tags: Dict[str, str], bio: Optional[str]) -> None:
+def check_groundedness(output_text: str, input_tags: Dict[str, str], bio: Optional[str], user_b_name: Optional[str] = None) -> None:
     """
     Check 6c: Lightweight groundedness check.
     Calculates the ratio of significant words (length >= 5) in the output that do NOT appear 
@@ -62,6 +62,8 @@ def check_groundedness(output_text: str, input_tags: Dict[str, str], bio: Option
         return
         
     corpus = (bio.lower() + " ") if bio else ""
+    if user_b_name:
+        corpus += user_b_name.lower() + " "
     for val in input_tags.values():
         if isinstance(val, str):
             corpus += val.lower() + " "
@@ -85,24 +87,33 @@ def check_scope_and_length(briefing: Dict[str, Any]) -> None:
     Check 6d: Length/scope check.
     Rejects strings that are too long, ensuring a compact briefing.
     """
-    if len(briefing.get("headline", "").split()) > 25:
+    headline = briefing.get("headline", "")
+    if len(headline.split()) > 25:
+        logger.warning(f"Scope validation failed: Headline is too long ({len(headline.split())} words, max 25).")
         raise MatchValidationException("Scope validation failed: Headline is too long.")
         
     for field in ["what_they_value", "living_style"]:
-        if len(briefing.get(field, "").split()) > 60:
+        val = briefing.get(field, "")
+        if len(val.split()) > 60:
+            logger.warning(f"Scope validation failed: Field '{field}' is too long ({len(val.split())} words, max 60).")
             raise MatchValidationException(f"Scope validation failed: Field '{field}' is too long.")
             
     for field in ["alignment_points", "differences_to_discuss", "questions_to_ask"]:
         arr = briefing.get(field, [])
         if len(arr) > 6:
-            raise MatchValidationException(f"Scope validation failed: Too many items in '{field}'.")
+            logger.warning(f"Scope validation warning: Too many items in '{field}' ({len(arr)} items). Truncating to 6.")
+            briefing[field] = arr[:6]
+            arr = briefing[field]
+            
         for item in arr:
             if len(item.split()) > 30:
+                logger.warning(f"Scope validation failed: Item in '{field}' is too long ({len(item.split())} words, max 30).")
                 raise MatchValidationException(f"Scope validation failed: Item in '{field}' is too long.")
 
 def validate_match_briefing(raw_json_str: str, raw_expectations_a: Optional[str], raw_expectations_b: Optional[str], 
                             tags_a: Dict[str, str], tags_b: Dict[str, str], 
-                            bio_a: Optional[str], bio_b: Optional[str]) -> Dict[str, Any]:
+                            bio_a: Optional[str], bio_b: Optional[str],
+                            user_b_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Runs all 4 deterministic validation checks on the generated LLM output.
     Returns parsed JSON if all pass, raises MatchValidationException if a strict guardrail fails.
@@ -127,7 +138,7 @@ def validate_match_briefing(raw_json_str: str, raw_expectations_a: Optional[str]
     check_similarity(full_output_text, raw_expectations_b)
     
     combined_tags = {**tags_a, **tags_b}
-    check_groundedness(full_output_text, combined_tags, (bio_a or "") + " " + (bio_b or ""))
+    check_groundedness(full_output_text, combined_tags, (bio_a or "") + " " + (bio_b or ""), user_b_name)
     check_scope_and_length(briefing)
     
     return briefing

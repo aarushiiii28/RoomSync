@@ -7,7 +7,7 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -81,8 +81,9 @@ api.interceptors.response.use(
 
       try {
         // Call the refresh endpoint directly (bypasses interceptor to avoid loops)
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const refreshResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+          `${baseUrl}/auth/refresh`,
           { refresh_token: refreshToken },
           { headers: { "Content-Type": "application/json" } }
         );

@@ -4,8 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MessageSquare } from "lucide-react";
 import type { CandidateMatchItem } from "@/types/matching";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { tokenStorage } from "@/services/token";
 
 export const PREDICTION_CONFIG = {
   High: {
@@ -34,6 +37,33 @@ interface MatchCardProps {
 }
 
 export default function MatchCard({ candidate, index }: MatchCardProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [startingChat, setStartingChat] = React.useState(false);
+
+  const handleStartChat = async (e: React.MouseEvent) => {
+    e.preventDefault(); // prevent triggering the Link
+    e.stopPropagation();
+    if (!user) return;
+    try {
+      setStartingChat(true);
+      const token = tokenStorage.getAccessToken();
+      const res = await fetch(
+        `http://localhost:8000/api/chat/conversations/user/${candidate.candidate_id}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to start chat");
+      const conv = await res.json();
+      router.push(`/dashboard/chat/${conv.id}`);
+    } catch (err) {
+      console.error("Error starting chat:", err);
+    } finally {
+      setStartingChat(false);
+    }
+  };
   const pred = candidate.prediction as "High" | "Medium" | "Low";
   const cfg = PREDICTION_CONFIG[pred] ?? PREDICTION_CONFIG.Medium;
 
@@ -143,6 +173,20 @@ export default function MatchCard({ candidate, index }: MatchCardProps) {
             />
             <span>{pred}</span>
           </div>
+
+          <button
+            onClick={handleStartChat}
+            disabled={startingChat}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50"
+            style={{
+              background: "rgba(217,120,112,0.15)",
+              color: "#D97870",
+              border: "1px solid rgba(217,120,112,0.3)",
+            }}
+            title="Message"
+          >
+            <MessageSquare size={14} />
+          </button>
 
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 transition-all duration-200"

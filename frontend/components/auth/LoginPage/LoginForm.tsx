@@ -14,7 +14,11 @@ import SocialLogin from "./SocialLogin";
 import { login } from "@/services/auth";
 import { getMyOnboarding } from "@/services/onboarding";
 
-export default function LoginForm() {
+export default function LoginForm({
+  onForgotPassword,
+}: {
+  onForgotPassword: () => void;
+}) {
   const router = useRouter();
 
   const [username, setUsername] = useState("");
@@ -120,6 +124,7 @@ export default function LoginForm() {
 
         <button
           type="button"
+          onClick={onForgotPassword}
           className="
             text-[13px]
             text-[#F8B4C8]

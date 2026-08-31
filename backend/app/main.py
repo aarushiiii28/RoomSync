@@ -5,6 +5,7 @@ from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.matching import router as matching_router
+from app.routers.chat import router as chat_router
 
 app = FastAPI(
     title="RoomSync API",
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(onboarding_router)
 app.include_router(matching_router)
+app.include_router(chat_router)
 
 @app.get("/")
 def root():

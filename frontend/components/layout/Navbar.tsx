@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import UserProfileMenu from "@/components/layout/UserProfileMenu";
+import { listConversations } from "@/services/chat";
 
 const navItems = [
   { name: "Home", href: "/", isAnchor: false },
@@ -14,6 +17,23 @@ const navItems = [
 
 export default function Navbar() {
   const { isAuthenticated, profileComplete, user, loading } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll for unread messages every 30s when logged in
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const fetchUnread = () => {
+      listConversations()
+        .then((convs) => {
+          const total = convs.reduce((sum, c) => sum + c.unread_count, 0);
+          setUnreadCount(total);
+        })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user]);
 
   const handleScroll = (id: string) => {
     const element = document.getElementById(id);
@@ -130,6 +150,23 @@ export default function Navbar() {
                   Complete Profile
                 </Link>
               )}
+
+              {/* Chat icon — left of profile avatar */}
+              <Link
+                href="/dashboard/chat"
+                className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all hover:bg-white/10"
+                title="Messages"
+              >
+                <MessageCircle size={20} className="text-gray-300 hover:text-white transition-colors" />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[10px] font-bold px-0.5"
+                    style={{ background: "#D97870", color: "#fff" }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
 
               {/* Avatar menu at the rightmost corner */}
               <UserProfileMenu />
