@@ -17,7 +17,8 @@ def rank_roommate_candidates(
     target_student: Dict[str, Any],
     candidate_students: List[Dict[str, Any]],
     top_n: Optional[int] = None,
-    min_label: Optional[str] = None
+    min_label: Optional[str] = None,
+    logistics_scores: Optional[Dict[str, float]] = None
 ) -> List[Dict[str, Any]]:
     """
     Rank a list of prospective roommate candidates for a target student.
@@ -71,11 +72,13 @@ def rank_roommate_candidates(
 
     # Ranking logic:
     # 1. Primary: Discrete ML label priority (High > Medium > Low)
-    # 2. Secondary: Model's predicted probability for 'High' (or class confidence)
-    # 3. Tertiary: Behavioral alignment score from feature signals
+    # 2. Secondary: Logistics Score (tie-breaker within the same ML label)
+    # 3. Tertiary: Model's predicted probability for 'High' (or class confidence)
+    # 4. Quaternary: Behavioral alignment score from feature signals
     ranked_results.sort(
         key=lambda x: (
             label_priority.get(x["compatibility_label"], 0),
+            logistics_scores.get(x["candidate_id"], 0.0) if logistics_scores else 0.0,
             x["probabilities"].get("High", 0.0),
             x["feature_signals"].get("behavioral_alignment_score", 0.0)
         ),

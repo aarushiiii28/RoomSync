@@ -20,7 +20,7 @@ from app.services.cognito import (
     cognito_sign_up,
     is_cognito_configured,
 )
-from app.services.security import hash_password
+from app.services.security import hash_password, verify_password, create_access_token, create_refresh_token
 
 logger = logging.getLogger("roomsync.auth")
 
@@ -82,9 +82,12 @@ def register_user(db: Session, user_data: UserRegister) -> User:
 
 def login_user(db: Session, credentials: UserLogin) -> Token:
     """
-    Authenticate a user via AWS Cognito or local fallback, provision verified user in DB if missing, and issue JWT tokens.
+    Authenticate a user via AWS Cognito, with a local password fallback.
+    If Cognito is configured but returns NotAuthorizedException or is unreachable,
+    and the user exists locally with a valid password_hash, use that instead.
     """
     identifier = credentials.username.strip()
+    now = datetime.now(timezone.utc)
 
     # Look up user in local DB to resolve username if email was provided
     user = (
@@ -97,59 +100,107 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     )
     cognito_identifier = user.username if user and user.username else identifier
 
-    # Authenticate with AWS Cognito User Pool
-    auth_result = cognito_initiate_auth(
-        username=cognito_identifier,
-        password=credentials.password,
-    )
+    # ── Try Cognito first ──────────────────────────────────────────────────────
+    cognito_error: Optional[Exception] = None
+    auth_result = None
 
-    access_token = auth_result.get("access_token", "")
-    refresh_token = auth_result.get("refresh_token", "")
-    token_type = auth_result.get("token_type", "bearer")
+    try:
+        auth_result = cognito_initiate_auth(
+            username=cognito_identifier,
+            password=credentials.password,
+        )
+    except ValueError as exc:
+        cognito_error = exc
+    except Exception as exc:
+        # Covers NoCredentialsError, EndpointConnectionError, etc.
+        cognito_error = exc
 
-    # Fetch user details from Cognito if user not yet in local database
-    now = datetime.now(timezone.utc)
-    if not user and is_cognito_configured() and access_token:
-        cognito_profile = cognito_get_user(access_token)
-        username_val = cognito_profile.get("username") or cognito_identifier
-        email_val = cognito_profile.get("email") or (identifier if "@" in identifier else None)
-        sub_val = cognito_profile.get("sub")
+    # ── If Cognito succeeded, use its tokens ───────────────────────────────────
+    if auth_result is not None:
+        access_token = auth_result.get("access_token", "")
+        refresh_token = auth_result.get("refresh_token", "")
+        token_type = auth_result.get("token_type", "bearer")
 
-        # Double check if user exists by sub, username, or email
-        user = (
-            db.query(User)
-            .filter(
-                (User.cognito_sub == sub_val)
-                | (func.lower(User.username) == username_val.lower())
-                | (func.lower(User.email) == (email_val.lower() if email_val else None))
+        # Provision user in local DB if they only exist in Cognito
+        if not user and is_cognito_configured() and access_token:
+            cognito_profile = cognito_get_user(access_token)
+            username_val = cognito_profile.get("username") or cognito_identifier
+            email_val = cognito_profile.get("email") or (identifier if "@" in identifier else None)
+            sub_val = cognito_profile.get("sub")
+
+            user = (
+                db.query(User)
+                .filter(
+                    (User.cognito_sub == sub_val)
+                    | (func.lower(User.username) == username_val.lower())
+                    | (func.lower(User.email) == (email_val.lower() if email_val else None))
+                )
+                .first()
             )
-            .first()
+
+            if not user:
+                user = User(
+                    id=uuid4(),
+                    username=username_val,
+                    email=email_val,
+                    cognito_sub=sub_val,
+                    email_verified=True,
+                    is_active=True,
+                    last_login_at=now,
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+
+        if user:
+            user.last_login_at = now
+            user.email_verified = True
+            db.commit()
+
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type=token_type,
         )
 
-        if not user:
-            user = User(
-                id=uuid4(),
-                username=username_val,
-                email=email_val,
-                cognito_sub=sub_val,
-                email_verified=True,
-                is_active=True,
-                last_login_at=now,
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+    # ── Cognito failed — try local password fallback ───────────────────────────
+    # This handles: missing AWS credentials, Cognito outage, or password mismatch
+    # where the user registered before Cognito was configured.
+    if user and user.password_hash and user.is_active:
+        if not verify_password(credentials.password, user.password_hash):
+            raise ValueError("Invalid username or password.")
 
-    if user:
+        if not user.email_verified:
+            raise ValueError("Please verify your email before logging in.")
+
+        # Issue local JWT tokens (same format Cognito would return)
+        token_payload = {
+            "sub": str(user.id),
+            "username": user.username or str(user.id),
+        }
+        access_token = create_access_token(token_payload)
+        refresh_token = create_refresh_token(token_payload)
+
         user.last_login_at = now
-        user.email_verified = True
         db.commit()
 
-    return Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type=token_type,
-    )
+        logger.info(
+            "User %s authenticated via local password fallback (Cognito error: %s)",
+            user.username,
+            cognito_error,
+        )
+
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        )
+
+    # ── Nothing worked — surface the original Cognito error ───────────────────
+    if cognito_error is not None:
+        raise ValueError(str(cognito_error))
+
+    raise ValueError("Invalid username or password.")
 
 
 def verify_email_otp(

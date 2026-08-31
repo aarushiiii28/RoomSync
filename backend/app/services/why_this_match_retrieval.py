@@ -7,8 +7,10 @@ from app.models.user import User
 from app.services.matching import predict_user_pair
 
 
-def bucket_scale(value: int) -> str:
-    """Bucket a 1-5 scale into qualitative tags."""
+def bucket_scale(value: Optional[int]) -> Optional[str]:
+    """Bucket a 1-5 scale into qualitative tags. Returns None if value is None."""
+    if value is None:
+        return None
     if value <= 2:
         return "low"
     elif value == 3:
@@ -17,8 +19,10 @@ def bucket_scale(value: int) -> str:
         return "high"
 
 
-def bucket_gaming_hours(hours: int) -> str:
-    """Bucket gaming hours into qualitative tags."""
+def bucket_gaming_hours(hours: Optional[int]) -> Optional[str]:
+    """Bucket gaming hours into qualitative tags. Returns None if hours is None."""
+    if hours is None:
+        return None
     if hours == 0:
         return "none"
     elif hours <= 2:
@@ -130,3 +134,40 @@ def get_user_a_context(db: Session, user_a_id: UUID) -> Dict[str, Any]:
         "bio": bio,
         "shareable_tags": shareable_tags
     }
+
+
+_DEAL_BREAKER_LABELS: Dict[str, str] = {
+    "loud_noise":         "Frequent loud noise & disturbances",
+    "poor_communication": "Poor communication / avoids discussing issues",
+    "unreliable_payments":"Unreliable with rent & shared expenses",
+    "lack_of_boundaries": "Lack of personal boundaries or respect for belongings",
+    "lack_of_privacy":    "Disregard for quiet hours or personal privacy",
+    "frequent_visitors":  "Frequent or unannounced overnight guests",
+    "smoking":            "Smoking inside the room or shared spaces",
+    "drinking":           "Frequent drinking in shared living spaces",
+    "pets":               "Pets in shared living spaces",
+    "untidy_living":      "Extremely messy or untidy habits",
+}
+
+
+def get_deal_breakers_a(db: Session, user_a_id: UUID) -> list[str]:
+    """
+    Returns User A's own deal-breakers as human-readable label strings, for use
+    ONLY in constructing User A's own 'Why This Match' briefing payload.
+    WARNING: Never call this for user_b_id — that would be a privacy violation.
+    """
+    user = db.query(User).filter(User.id == user_a_id).first()
+    if not user or not user.roommate_preference:
+        return []
+    pref = user.roommate_preference
+    labels = []
+    for slug in (pref.deal_breakers or []):
+        if slug == "other":
+            if pref.deal_breaker_other:
+                labels.append(f"Other: {pref.deal_breaker_other}")
+        else:
+            label = _DEAL_BREAKER_LABELS.get(slug)
+            if label:
+                labels.append(label)
+    return labels
+

@@ -136,12 +136,12 @@ export default function StepPreferences({
       </div>
 
       {/* ===================================================================== */}
-      {/* 2. AGE & BUDGET                                                       */}
+      {/* 2. AGE                                                              */}
       {/* ===================================================================== */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="border-b border-[#EBD6CF] pb-2">
           <h2 className="text-[13.5px] font-extrabold uppercase tracking-wider text-[#2D3246]">
-            Age & Budget
+            Age
           </h2>
         </div>
 
@@ -181,49 +181,6 @@ export default function StepPreferences({
                     onChange({ max_age: parseInt(e.target.value, 10) || 35 })
                   }
                   hasError={Boolean(errors.max_age)}
-                />
-              </FormField>
-            </div>
-          </div>
-
-          {/* Budget Range Card */}
-          <div className="p-4 rounded-lg bg-white border border-[#EBD6CF] shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[13.5px] font-semibold text-[#2D3246]">
-                Roommate Budget (₹) <span className="text-[#D97870]">*</span>
-              </label>
-              <span className="text-[12px] text-[#494F66] font-bold">
-                ₹{Number(data.budget_min).toLocaleString()} – ₹
-                {Number(data.budget_max).toLocaleString()}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Min (₹)" error={errors.budget_min}>
-                <TextInput
-                  type="number"
-                  min={0}
-                  step={500}
-                  icon={<IndianRupee size={14} />}
-                  value={data.budget_min}
-                  onChange={(e) =>
-                    onChange({ budget_min: parseFloat(e.target.value) || 0 })
-                  }
-                  hasError={Boolean(errors.budget_min)}
-                />
-              </FormField>
-
-              <FormField label="Max (₹)" error={errors.budget_max}>
-                <TextInput
-                  type="number"
-                  min={0}
-                  step={500}
-                  icon={<IndianRupee size={14} />}
-                  value={data.budget_max}
-                  onChange={(e) =>
-                    onChange({ budget_max: parseFloat(e.target.value) || 0 })
-                  }
-                  hasError={Boolean(errors.budget_max)}
                 />
               </FormField>
             </div>

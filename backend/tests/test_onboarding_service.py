@@ -180,8 +180,6 @@ CREATE TABLE IF NOT EXISTS roommate_preferences (
     preferred_gender            TEXT NOT NULL,
     min_age                     INTEGER NOT NULL,
     max_age                     INTEGER NOT NULL,
-    budget_min                  REAL NOT NULL,
-    budget_max                  REAL NOT NULL,
     social_style                TEXT NOT NULL DEFAULT 'balanced',
     personal_space              TEXT NOT NULL DEFAULT 'moderate',
     communication_style         TEXT NOT NULL DEFAULT 'open_communication',
@@ -261,8 +259,6 @@ _ONBOARDING_PAYLOAD = dict(
         preferred_gender="any",
         min_age=20,
         max_age=30,
-        budget_min="5000.00",
-        budget_max="15000.00",
         social_style="balanced",
         personal_space="moderate",
         communication_style="open_communication",
@@ -824,7 +820,7 @@ class TestOnboardingService(unittest.TestCase):
     def test_21_bio_word_count_validation(self):
         from pydantic import ValidationError
 
-        # Too few words (< 10 words)
+        # Too few words (< 4 words)
         with self.assertRaises(ValidationError) as ctx:
             ProfileCreate(
                 first_name="Test",
@@ -832,10 +828,10 @@ class TestOnboardingService(unittest.TestCase):
                 date_of_birth="2000-01-01",
                 gender="female",
                 occupation="Engineer",
-                bio="Too short bio with only seven words now.",
+                bio="Too short.",
                 roommate_expectations="Looking for a clean and respectful roommate who values quiet hours after 10 PM on weekdays, communicates openly about chores, and respects space.",
             )
-        self.assertIn("Bio must be at least 10 words", str(ctx.exception))
+        self.assertIn("Bio must be at least 4 words", str(ctx.exception))
 
         # Too many words (> 20 words)
         with self.assertRaises(ValidationError) as ctx:

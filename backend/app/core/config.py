@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     COGNITO_CLIENT_SECRET: str = ""
     
     FRONTEND_URL: str = "http://localhost:3000"
+    GROQ_API_KEY: str = ""
     OTP_EXPIRY_MINUTES: int = 5
     OTP_MAX_ATTEMPTS: int = 5
     OTP_RESEND_COOLDOWN_SECONDS: int = 60

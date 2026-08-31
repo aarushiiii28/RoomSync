@@ -166,8 +166,6 @@ def _preference_kwargs(data: PreferenceCreate, user_id: UUID) -> dict:
         "preferred_gender": data.preferred_gender,
         "min_age": data.min_age,
         "max_age": data.max_age,
-        "budget_min": data.budget_min,
-        "budget_max": data.budget_max,
         "social_style": data.social_style,
         "personal_space": data.personal_space,
         "communication_style": data.communication_style,
@@ -437,8 +435,6 @@ def save_partial_onboarding(
                         "preferred_gender": "any",
                         "min_age": 18,
                         "max_age": 35,
-                        "budget_min": 5000.0,
-                        "budget_max": 15000.0,
                         "social_style": "balanced",
                         "personal_space": "moderate",
                         "communication_style": "open_communication",
@@ -577,8 +573,7 @@ def get_onboarding_progress(
         and bool(accommodation_record.move_in_timeframe)
         and lifestyle_record is not None
         and bool(lifestyle_record.sleep_time and lifestyle_record.wake_time)
-        and preference_record is not None
-        and bool(preference_record.min_age and preference_record.budget_min is not None)
+        and bool(preference_record.min_age is not None)
     )
 
     return OnboardingProgressResponse(

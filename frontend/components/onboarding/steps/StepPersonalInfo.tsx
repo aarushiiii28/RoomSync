@@ -22,7 +22,8 @@ const GENDER_OPTIONS: PillOption<GenderEnum>[] = [
 function countWords(text: string): number {
   const trimmed = text ? text.trim() : "";
   if (!trimmed) return 0;
-  return trimmed.split(/\s+/).length;
+  // Split by whitespace and only count tokens that contain at least one alphanumeric character
+  return trimmed.split(/\s+/).filter(word => /[a-zA-Z0-9]/.test(word)).length;
 }
 
 export default function StepPersonalInfo({
@@ -110,11 +111,11 @@ export default function StepPersonalInfo({
         />
       </FormField>
 
-      {/* Section 1: Bio (Public, 10–20 words) */}
+      {/* Section 1: Bio (Public, 4–20 words) */}
       <FormField
         label="Bio"
         required
-        description="Visible to everyone on your public profile (10–20 words)."
+        description="Visible to everyone on your public profile (4–20 words)."
         error={errors.bio}
       >
         <div className="relative">
@@ -147,13 +148,13 @@ export default function StepPersonalInfo({
               className={`text-[11px] font-medium ${
                 bioWords === 0
                   ? "text-[#7E849B]"
-                  : bioWords >= 10 && bioWords <= 20
+                  : bioWords >= 4 && bioWords <= 20
                   ? "text-emerald-600"
                   : "text-amber-600"
               }`}
             >
-              {bioWords} / 10–20 words
-              {bioWords >= 10 && bioWords <= 20 ? " ✓" : ""}
+              {bioWords} / 4–20 words
+              {bioWords >= 4 && bioWords <= 20 ? " ✓" : ""}
             </span>
           </div>
         </div>

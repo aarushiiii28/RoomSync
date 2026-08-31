@@ -127,8 +127,6 @@ CREATE TABLE IF NOT EXISTS roommate_preferences (
     preferred_gender            TEXT NOT NULL,
     min_age                     INTEGER NOT NULL,
     max_age                     INTEGER NOT NULL,
-    budget_min                  REAL NOT NULL,
-    budget_max                  REAL NOT NULL,
     social_style                TEXT NOT NULL,
     personal_space              TEXT NOT NULL,
     communication_style         TEXT NOT NULL,

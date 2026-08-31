@@ -164,14 +164,12 @@ class LocationUpdate(BaseModel):
         default=None, ge=Decimal("-180"), le=Decimal("180")
     )
 
-    @field_validator("country", "state", "city", "locality", mode="before")
+    @field_validator("country", "state", "city", "locality", "pincode", mode="before")
     @classmethod
     def strip_and_check(cls, v: str | None) -> str | None:
         if isinstance(v, str):
             stripped = v.strip()
-            if not stripped:
-                raise ValueError("Field must not be blank.")
-            return stripped
+            return stripped if stripped else None
         return v
 
     @model_validator(mode="after")

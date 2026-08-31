@@ -13,7 +13,7 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, profileComplete, loading } = useAuth();
+  const { isAuthenticated, profileComplete, user, loading } = useAuth();
 
   const handleScroll = (id: string) => {
     const element = document.getElementById(id);
@@ -104,7 +104,7 @@ export default function Navbar() {
 
         {/* Right Buttons & Profile Menu */}
         <div className="flex flex-1 justify-end items-center gap-3">
-          {!loading && isAuthenticated ? (
+          {!loading && isAuthenticated && user ? (
             <>
               {!profileComplete && (
                 /* Authenticated + Incomplete Profile */
@@ -156,7 +156,7 @@ export default function Navbar() {
                   items-center
                 "
               >
-                Login / Register
+                Log In
               </Link>
 
               <Link

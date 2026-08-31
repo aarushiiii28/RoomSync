@@ -71,9 +71,6 @@ class RoommatePreference(Base):
     min_age: Mapped[int] = mapped_column(Integer, nullable=False)
     max_age: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    budget_min: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    budget_max: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-
     # 2. Social & Personal Compatibility
     social_style: Mapped[SocialStyle] = mapped_column(
         SAEnum(SocialStyle, name="socialstyle", create_type=True),

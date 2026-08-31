@@ -68,17 +68,6 @@ class PreferenceCreate(BaseModel):
         description="Maximum acceptable age of a roommate.",
     )
 
-    budget_min: Decimal = Field(
-        ge=_MIN_BUDGET,
-        le=_MAX_BUDGET,
-        description="Minimum monthly budget (currency: local).",
-    )
-    budget_max: Decimal = Field(
-        ge=_MIN_BUDGET,
-        le=_MAX_BUDGET,
-        description="Maximum monthly budget (currency: local).",
-    )
-
     # Social & Personal Compatibility
     social_style: SocialStyle = Field(
         default=SocialStyle.balanced,
@@ -148,11 +137,6 @@ class PreferenceCreate(BaseModel):
             raise ValueError(
                 f"min_age ({self.min_age}) must be ≤ max_age ({self.max_age})."
             )
-        if self.budget_min > self.budget_max:
-            raise ValueError(
-                f"budget_min ({self.budget_min}) must be ≤ "
-                f"budget_max ({self.budget_max})."
-            )
         return self
 
 
@@ -165,12 +149,6 @@ class PreferenceUpdate(BaseModel):
     )
     max_age: int | None = Field(
         default=None, ge=_MIN_REALISTIC_AGE, le=_MAX_REALISTIC_AGE
-    )
-    budget_min: Decimal | None = Field(
-        default=None, ge=_MIN_BUDGET, le=_MAX_BUDGET
-    )
-    budget_max: Decimal | None = Field(
-        default=None, ge=_MIN_BUDGET, le=_MAX_BUDGET
     )
     social_style: SocialStyle | None = Field(default=None)
     personal_space: PersonalSpacePreference | None = Field(default=None)
@@ -201,12 +179,6 @@ class PreferenceUpdate(BaseModel):
                     f"min_age ({self.min_age}) must be ≤ "
                     f"max_age ({self.max_age})."
                 )
-        if self.budget_min is not None and self.budget_max is not None:
-            if self.budget_min > self.budget_max:
-                raise ValueError(
-                    f"budget_min ({self.budget_min}) must be ≤ "
-                    f"budget_max ({self.budget_max})."
-                )
         return self
 
 
@@ -225,8 +197,6 @@ class PreferenceResponse(BaseModel):
     preferred_gender: GenderPreference
     min_age: int
     max_age: int
-    budget_min: Decimal
-    budget_max: Decimal
     social_style: SocialStyle = SocialStyle.balanced
     personal_space: PersonalSpacePreference = PersonalSpacePreference.moderate
     communication_style: CommunicationStyle = CommunicationStyle.open_communication

@@ -9,7 +9,7 @@
  */
 
 import api from "./api";
-import type { RecommendationResponse } from "@/types/matching";
+import type { MatchBriefingResponse, RecommendationResponse } from "@/types/matching";
 
 /**
  * Fetch ranked roommate recommendations for the currently-authenticated user.
@@ -33,3 +33,20 @@ export async function getRecommendations(
 
   return response.data;
 }
+
+/**
+ * Generate or retrieve on-demand private match briefing for a candidate.
+ * Calls GET /matching/why-this-match/{candidate_id}.
+ * Supports cancellation via AbortSignal.
+ */
+export async function getWhyThisMatch(
+  candidateId: string,
+  signal?: AbortSignal
+): Promise<MatchBriefingResponse> {
+  const response = await api.get<MatchBriefingResponse>(
+    `/matching/why-this-match/${candidateId}`,
+    { signal }
+  );
+  return response.data;
+}
+

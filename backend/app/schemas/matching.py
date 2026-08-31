@@ -69,8 +69,17 @@ class CandidateMatchItem(BaseModel):
     probabilities: Dict[str, float]
     feature_signals: Dict[str, float]
     rule_based_explainability: RuleExplainability
+    logistics_score: float
 
 
 class RecommendationResponse(BaseModel):
     matches: List[CandidateMatchItem]
     total_evaluated: int
+
+class MatchBriefingResponse(BaseModel):
+    headline: str = Field(..., description="Short, plain-language summary")
+    what_they_value: str = Field(..., description="What they value in a roommate")
+    living_style: str = Field(..., description="Description of living style")
+    alignment_points: List[str] = Field(..., description="Points of alignment")
+    differences_to_discuss: List[str] = Field(..., description="Differences to discuss")
+    questions_to_ask: List[str] = Field(..., description="Questions to ask")

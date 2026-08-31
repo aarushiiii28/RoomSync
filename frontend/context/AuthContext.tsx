@@ -52,29 +52,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      setIsAuthenticated(true);
-
       // 1. Fetch User Identity (id, username, email)
-      let userId = "";
-      let username = "";
-      let userEmail: string | null = null;
-
+      // User is ONLY authenticated if this request succeeds with a valid user
+      let userAccount;
       try {
-        const userAccount = await getCurrentUser();
-        userId = userAccount.id || "";
-        username = userAccount.username || "";
-        userEmail = userAccount.email || null;
-      } catch (userErr: unknown) {
-        const errObj = userErr as { response?: { status?: number } };
-        if (errObj?.response?.status === 401) {
-          tokenStorage.clearTokens();
-          setIsAuthenticated(false);
-          setProfileComplete(false);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+        userAccount = await getCurrentUser();
+      } catch {
+        tokenStorage.clearTokens();
+        setIsAuthenticated(false);
+        setProfileComplete(false);
+        setUser(null);
+        setLoading(false);
+        return;
       }
+
+      if (!userAccount || !userAccount.id) {
+        tokenStorage.clearTokens();
+        setIsAuthenticated(false);
+        setProfileComplete(false);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const userId = userAccount.id;
+      const username = userAccount.username || "";
+      const userEmail = userAccount.email || null;
 
       // 2. Fetch Onboarding Profile (first_name, last_name, avatar, is_complete)
       let firstName = "";
@@ -113,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isComplete = false;
       }
 
+      setIsAuthenticated(true);
       setProfileComplete(isComplete);
       setUser({
         id: userId,
@@ -122,6 +126,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         lastName,
         profilePhotoUrl: photoUrl,
       });
+    } catch {
+      tokenStorage.clearTokens();
+      setIsAuthenticated(false);
+      setProfileComplete(false);
+      setUser(null);
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Loader2,
@@ -13,13 +13,18 @@ import {
   User as UserIcon,
   Calendar,
   AlertCircle,
+  X,
+  RotateCw,
+  CheckCircle2,
+  MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 
 import DashboardGuard from "@/components/dashboard/DashboardGuard";
 import Navbar from "@/components/layout/Navbar";
-import { getRecommendations } from "@/services/matching";
+import { getRecommendations, getWhyThisMatch } from "@/services/matching";
 import { PREDICTION_CONFIG } from "@/components/dashboard/MatchCard";
-import type { CandidateMatchItem } from "@/types/matching";
+import type { CandidateMatchItem, MatchBriefingResponse } from "@/types/matching";
 
 const SIGNAL_LABELS: Record<string, string> = {
   sleep_compatibility: "Sleep Compatibility",
@@ -43,7 +48,30 @@ export default function MatchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // "Why This Match" state — component-local, strictly per-viewer
+  const [briefing, setBriefing] = useState<MatchBriefingResponse | null>(null);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
+  const [isForbidden, setIsForbidden] = useState(false);
+
+  // AbortController ref to cancel in-flight briefing requests on navigation
+  const briefingAbortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
+    // 1. Abort any in-flight briefing request from previous candidate
+    if (briefingAbortRef.current) {
+      briefingAbortRef.current.abort();
+      briefingAbortRef.current = null;
+    }
+
+    // 2. Reset all briefing states on candidate navigation
+    setBriefing(null);
+    setShowBriefing(false);
+    setBriefingLoading(false);
+    setBriefingError(null);
+    setIsForbidden(false);
+
     async function loadMatch() {
       if (!candidateId) return;
       setLoading(true);
@@ -65,7 +93,67 @@ export default function MatchDetailPage() {
     }
 
     loadMatch();
+
+    return () => {
+      if (briefingAbortRef.current) {
+        briefingAbortRef.current.abort();
+        briefingAbortRef.current = null;
+      }
+    };
   }, [candidateId]);
+
+  const handleFetchBriefing = async () => {
+    if (!candidateId || briefingLoading) return;
+
+    // Cancel any existing request
+    if (briefingAbortRef.current) {
+      briefingAbortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    briefingAbortRef.current = controller;
+    const targetCandidateId = candidateId;
+
+    setShowBriefing(true);
+    setBriefingLoading(true);
+    setBriefingError(null);
+    setIsForbidden(false);
+
+    try {
+      const data = await getWhyThisMatch(targetCandidateId, controller.signal);
+
+      // Race guard: only set briefing if user is still on this candidate and not aborted
+      if (targetCandidateId === candidateId && !controller.signal.aborted) {
+        setBriefing(data);
+      }
+    } catch (err: unknown) {
+      if (controller.signal.aborted) return; // Discard canceled requests
+
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 403) {
+        setIsForbidden(true);
+        setBriefingError("This match briefing is no longer available.");
+      } else {
+        setIsForbidden(false);
+        setBriefingError("Unable to load match briefing. Please check your connection.");
+      }
+    } finally {
+      if (targetCandidateId === candidateId && !controller.signal.aborted) {
+        setBriefingLoading(false);
+      }
+    }
+  };
+
+  const handleToggleBriefing = () => {
+    if (showBriefing) {
+      setShowBriefing(false);
+    } else {
+      setShowBriefing(true);
+      if (!briefing && !briefingLoading) {
+        handleFetchBriefing();
+      }
+    }
+  };
 
   const pred = candidate?.prediction as "High" | "Medium" | "Low";
   const cfg = candidate ? PREDICTION_CONFIG[pred] ?? PREDICTION_CONFIG.Medium : PREDICTION_CONFIG.Medium;
@@ -247,27 +335,230 @@ export default function MatchDetailPage() {
 
               {/* ── Main Breakdown Content ── */}
               <div className="p-7 sm:p-9 lg:p-11 space-y-6">
-                {/* Compatibility Score (On existing pink background, left-aligned, no white box, no Rule badge) */}
-                <div className="flex flex-col items-start gap-0.5">
-                  <p
-                    className="text-[12px] font-bold uppercase tracking-[0.2em]"
-                    style={{ color: "#8b92a5" }}
-                  >
-                    Compatibility
-                  </p>
-                  <p
-                    className="text-4xl sm:text-5xl font-bold font-sans tracking-tight"
-                    style={{ color: "#2D3246" }}
-                  >
-                    {Math.round(candidate.rule_based_explainability.rule_score)}
-                    <span
-                      className="text-2xl sm:text-3xl font-semibold ml-1"
+                {/* Compatibility Score & Why This Match Action Button */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-start gap-0.5">
+                    <p
+                      className="text-[12px] font-bold uppercase tracking-[0.2em]"
                       style={{ color: "#8b92a5" }}
                     >
-                      %
-                    </span>
-                  </p>
+                      Compatibility
+                    </p>
+                    <p
+                      className="text-4xl sm:text-5xl font-bold font-sans tracking-tight"
+                      style={{ color: "#2D3246" }}
+                    >
+                      {Math.round(candidate.rule_based_explainability.rule_score)}
+                      <span
+                        className="text-2xl sm:text-3xl font-semibold ml-1"
+                        style={{ color: "#8b92a5" }}
+                      >
+                        %
+                      </span>
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleToggleBriefing}
+                    className="px-5 py-2.5 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-95 active:scale-[0.98] cursor-pointer"
+                    style={{
+                      background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                    }}
+                  >
+                    Why This Match?
+                  </button>
                 </div>
+
+                {/* ── Why This Match Section (Opens directly below Score & Button) ── */}
+                <AnimatePresence>
+                  {showBriefing && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -8 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -8 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-4 overflow-hidden"
+                    >
+                      {/* Loading State */}
+                      {briefingLoading && (
+                        <div className="p-8 rounded-2xl bg-white border border-[#EBD6CF] shadow-xs flex flex-col items-center justify-center gap-3 relative">
+                          <button
+                            onClick={() => setShowBriefing(false)}
+                            className="absolute top-4 right-4 text-[#8b92a5] hover:text-[#2D3246] hover:bg-[#F8ECE8] p-1.5 rounded-lg transition-all cursor-pointer"
+                            title="Close"
+                          >
+                            <X size={18} />
+                          </button>
+                          <Loader2 className="w-7 h-7 animate-spin text-[#D97870]" />
+                          <p className="text-[13.5px] font-medium text-[#494F66]">
+                            Generating your private match briefing...
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 403 Forbidden State */}
+                      {!briefingLoading && isForbidden && (
+                        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#EBD6CF] shadow-xs flex items-center justify-between">
+                          <div className="flex items-center gap-2.5 text-[14px] text-[#D97870] font-medium">
+                            <AlertCircle size={18} className="shrink-0" />
+                            <span>This match briefing is no longer available.</span>
+                          </div>
+                          <button
+                            onClick={() => setShowBriefing(false)}
+                            className="text-[#8b92a5] hover:text-[#2D3246] hover:bg-[#F8ECE8] p-1.5 rounded-lg transition-all cursor-pointer"
+                            title="Close"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Error / Fallback State — Image 2 Design */}
+                      {!briefingLoading && !isForbidden && (briefingError || (briefing && (briefing.headline === "We don't have enough information to explain this match yet." || briefing.headline.includes("not enough information")))) && (
+                        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#EBD6CF] shadow-xs space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h2 className="font-sans text-xl font-bold text-[#2D3246]">
+                              Oops! Something went wrong
+                            </h2>
+                            <button
+                              onClick={() => setShowBriefing(false)}
+                              className="text-[#8b92a5] hover:text-[#2D3246] hover:bg-[#F8ECE8] p-1.5 rounded-lg transition-all cursor-pointer"
+                              title="Close"
+                            >
+                              <X size={20} />
+                            </button>
+                          </div>
+
+                          <p className="text-[14px] text-[#494F66] leading-relaxed">
+                            We couldn&apos;t generate the match insights right now. This is likely a temporary issue.
+                          </p>
+
+                          <p className="text-[14px] font-semibold text-[#2D3246]">
+                            Please try again in a moment.
+                          </p>
+
+                          <div className="pt-1">
+                            <button
+                              onClick={handleFetchBriefing}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-xs hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                              style={{
+                                background: "linear-gradient(135deg, #494F66 0%, #3B4054 100%)",
+                                color: "#ffffff",
+                                border: "1px solid rgba(255,255,255,0.15)",
+                              }}
+                            >
+                              <RotateCw size={14} />
+                              <span>Try Again</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Genuine Success State */}
+                      {!briefingLoading && briefing && briefing.headline !== "We don't have enough information to explain this match yet." && !briefing.headline.includes("not enough information") && (
+                        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#EBD6CF] shadow-xs space-y-6">
+                          {/* Header & Headline with Close Button */}
+                          <div className="border-b pb-4 space-y-1.5" style={{ borderColor: "#EBD6CF" }}>
+                            <div className="flex items-center justify-between">
+                              <h2 className="font-sans text-xl font-bold text-[#2D3246]">
+                                Why This Match?
+                              </h2>
+                              <button
+                                onClick={() => setShowBriefing(false)}
+                                className="text-[#8b92a5] hover:text-[#2D3246] hover:bg-[#F8ECE8] p-1.5 rounded-lg transition-all cursor-pointer"
+                                title="Close"
+                              >
+                                <X size={20} />
+                              </button>
+                            </div>
+                            <p className="text-[14.5px] font-medium text-[#494F66] leading-relaxed">
+                              {briefing.headline}
+                            </p>
+                          </div>
+
+                          {/* Values & Living Style */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 rounded-xl bg-[#F8ECE8]/60 border border-[#EBD6CF] space-y-1.5">
+                              <h3 className="text-[12px] font-bold uppercase tracking-wider text-[#686E85]">
+                                What They Value
+                              </h3>
+                              <p className="text-[13.5px] text-[#494F66] leading-relaxed">
+                                {briefing.what_they_value}
+                              </p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-[#F8ECE8]/60 border border-[#EBD6CF] space-y-1.5">
+                              <h3 className="text-[12px] font-bold uppercase tracking-wider text-[#686E85]">
+                                Living Style & Routine
+                              </h3>
+                              <p className="text-[13.5px] text-[#494F66] leading-relaxed">
+                                {briefing.living_style}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Alignment, Discussion Points, and Conversation Starters */}
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-1">
+                            {/* Alignment Points */}
+                            <div className="p-4 rounded-xl bg-[#F4F9F4] border border-[#C8E6C9] space-y-2.5">
+                              <div className="flex items-center gap-1.5 text-[#2E7D32]">
+                                <CheckCircle2 size={16} />
+                                <h4 className="text-[12.5px] font-bold uppercase tracking-wide">
+                                  Key Alignments
+                                </h4>
+                              </div>
+                              <ul className="space-y-1.5 text-[13px] text-[#2E7D32]/90">
+                                {briefing.alignment_points.map((pt, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-[#2E7D32] font-bold">•</span>
+                                    <span>{pt}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Differences to Discuss */}
+                            <div className="p-4 rounded-xl bg-[#FAF6F0] border border-[#E8DCC4] space-y-2.5">
+                              <div className="flex items-center gap-1.5 text-[#8D6E63]">
+                                <MessageSquare size={16} />
+                                <h4 className="text-[12.5px] font-bold uppercase tracking-wide">
+                                  Points to Discuss
+                                </h4>
+                              </div>
+                              <ul className="space-y-1.5 text-[13px] text-[#6D4C41]">
+                                {briefing.differences_to_discuss.map((diff, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-[#8D6E63] font-bold">•</span>
+                                    <span>{diff}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Questions to Ask */}
+                            <div className="p-4 rounded-xl bg-[#F8ECE8] border border-[#EBD6CF] space-y-2.5">
+                              <div className="flex items-center gap-1.5 text-[#D97870]">
+                                <HelpCircle size={16} />
+                                <h4 className="text-[12.5px] font-bold uppercase tracking-wide">
+                                  Conversation Starters
+                                </h4>
+                              </div>
+                              <ul className="space-y-1.5 text-[13px] text-[#494F66]">
+                                {briefing.questions_to_ask.map((q, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-[#D97870] font-bold">•</span>
+                                    <span>{q}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Sub-dimensional Compatibility Signals */}
                 <div

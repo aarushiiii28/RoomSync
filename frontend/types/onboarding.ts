@@ -238,8 +238,6 @@ export interface PreferenceCreate {
   preferred_gender: GenderPreference;
   min_age: number;
   max_age: number;
-  budget_min: number | string;
-  budget_max: number | string;
   social_style: SocialStyle;
   personal_space: PersonalSpacePreference;
   communication_style: CommunicationStyle;
@@ -263,8 +261,6 @@ export interface PreferenceResponse {
   preferred_gender: GenderPreference;
   min_age: number;
   max_age: number;
-  budget_min: number | string;
-  budget_max: number | string;
   social_style: SocialStyle;
   personal_space: PersonalSpacePreference;
   communication_style: CommunicationStyle;

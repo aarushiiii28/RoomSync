@@ -397,7 +397,7 @@ export default function UserProfileMenu() {
     };
   }, [stopCamera]);
 
-  if (loading || !isAuthenticated) {
+  if (loading || !isAuthenticated || !user || !user.id) {
     return null;
   }
 

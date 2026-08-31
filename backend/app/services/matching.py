@@ -24,6 +24,12 @@ from app.schemas.matching import (
     RecommendationResponse,
     RuleExplainability,
 )
+from app.services.logistics_scoring import (
+    evaluate_budget,
+    score_lease_duration,
+    score_move_in_timeframe,
+    score_room_preference,
+)
 
 from src.matching.ml_adapter import build_ml_student, build_student_from_user
 from src.matching.prediction_pipeline import predict
@@ -74,6 +80,12 @@ def predict_user_pair(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Candidate user with ID {candidate_user_id} not found."
         )
+        
+    if not is_authorized_match(current_user, candidate_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to evaluate compatibility with this user."
+        )
 
     # Ensure both users have lifestyle profiles
     if not current_user.lifestyle_profile:
@@ -104,6 +116,59 @@ def predict_user_pair(
     )
 
 
+def is_authorized_match(requesting_user: User, candidate_user: User) -> bool:
+    """
+    Evaluates whether candidate_user is an authorized and compatible match for requesting_user.
+    - Sections 1 & 2 (Accommodation Type, Hard Gender) are bidirectional.
+    - Section 3 (Group-A Deal-breakers) is directional (requesting_user's deal-breakers vs candidate_user's lifestyle).
+    """
+    prof_a = requesting_user.profile
+    pref_a = requesting_user.roommate_preference
+    acc_a = requesting_user.accommodation_preference
+    
+    prof_b = candidate_user.profile
+    pref_b = candidate_user.roommate_preference
+    acc_b = candidate_user.accommodation_preference
+    
+    # ── 1. Bidirectional Accommodation Type Filter ──────────────────────
+    acc_type_a = acc_a.accommodation_type.value if (acc_a and acc_a.accommodation_type) else None
+    acc_type_b = acc_b.accommodation_type.value if (acc_b and acc_b.accommodation_type) else None
+    
+    if acc_type_a is not None or acc_type_b is not None:
+        if acc_type_a != acc_type_b:
+            return False
+            
+    # ── 2. Bidirectional Hard Gender Filter ─────────────────────────────
+    gender_a = prof_a.gender.value if (prof_a and prof_a.gender) else None
+    pref_gender_a = pref_a.preferred_gender.value if (pref_a and pref_a.preferred_gender and pref_a.preferred_gender.value != "any") else None
+    
+    gender_b = prof_b.gender.value if (prof_b and prof_b.gender) else None
+    pref_gender_b = pref_b.preferred_gender.value if (pref_b and pref_b.preferred_gender and pref_b.preferred_gender.value != "any") else None
+    
+    if pref_gender_a is not None and gender_b != pref_gender_a:
+        return False
+    if pref_gender_b is not None and gender_a != pref_gender_b:
+        return False
+
+    # ── 3. One-directional Group-A Deal-breaker Filter ──────────────────
+    # Check requesting_user's deal-breakers against candidate_user's lifestyle profile.
+    deal_breakers_a = set(pref_a.deal_breakers) if (pref_a and pref_a.deal_breakers) else set()
+    lp_b = candidate_user.lifestyle_profile
+    if lp_b:
+        _DEAL_BREAKER_CHECKS = {
+            "smoking":           lambda lp: lp.smoking is not None and lp.smoking.value in ("occasionally", "regularly"),
+            "drinking":          lambda lp: lp.drinking is not None and lp.drinking.value == "regularly",
+            "pets":              lambda lp: lp.pets is not None and lp.pets.value == "has_pets",
+            "frequent_visitors": lambda lp: lp.guest_frequency is not None and lp.guest_frequency.value in ("often", "always"),
+            "untidy_living":     lambda lp: lp.cleanliness is not None and lp.cleanliness.value == "relaxed",
+        }
+        for db_key, check_fn in _DEAL_BREAKER_CHECKS.items():
+            if db_key in deal_breakers_a and check_fn(lp_b):
+                return False
+        
+    return True
+
+
 def get_recommendations(
     db: Session,
     current_user: User,
@@ -121,26 +186,6 @@ def get_recommendations(
 
     target_student, _ = build_student_from_user(current_user)
 
-    # Determine current user's gender, roommate gender preference, and accommodation type
-    current_prof = current_user.profile
-    current_user_gender: Optional[str] = (
-        current_prof.gender.value if (current_prof and current_prof.gender) else None
-    )
-
-    current_pref = current_user.roommate_preference
-    current_preferred_gender: Optional[str] = (
-        current_pref.preferred_gender.value
-        if (current_pref and current_pref.preferred_gender and current_pref.preferred_gender.value != "any")
-        else None
-    )
-
-    current_acc = current_user.accommodation_preference
-    current_accommodation_type: Optional[str] = (
-        current_acc.accommodation_type.value
-        if (current_acc and current_acc.accommodation_type)
-        else None
-    )
-
     # Query active candidate users who have completed lifestyle onboarding
     candidate_users = (
         db.query(User)
@@ -157,49 +202,48 @@ def get_recommendations(
     user_metadata: Dict[str, Dict[str, Any]] = {}
 
     for user in candidate_users:
+        if not is_authorized_match(current_user, user):
+            continue
+            
+        acc_a = current_user.accommodation_preference
+        acc_b = user.accommodation_preference
+        
+        # If either is missing their accommodation preference, they get a neutral score
+        # and are NOT excluded. (Prevents silent drops of users with partial profiles).
+        if not acc_a or not acc_b:
+            logistics_score = 0.5
+        else:
+            # 1. Budget Hard Filter
+            min_a = float(acc_a.budget_min)
+            max_a = float(acc_a.budget_max)
+            min_b = float(acc_b.budget_min)
+            max_b = float(acc_b.budget_max)
+            is_viable, budget_score = evaluate_budget(min_a, max_a, min_b, max_b)
+            if not is_viable:
+                continue
+                
+            # 2. Logistics Scored Signals
+            room_a = acc_a.room_type.value if acc_a.room_type else None
+            room_b = acc_b.room_type.value if acc_b.room_type else None
+            room_score = score_room_preference(room_a, room_b)
+            
+            move_a = acc_a.move_in_timeframe.value if acc_a.move_in_timeframe else None
+            move_b = acc_b.move_in_timeframe.value if acc_b.move_in_timeframe else None
+            move_score = score_move_in_timeframe(move_a, move_b)
+            
+            lease_a = acc_a.lease_duration.value if acc_a.lease_duration else None
+            lease_b = acc_b.lease_duration.value if acc_b.lease_duration else None
+            lease_score = score_lease_duration(lease_a, lease_b)
+            
+            logistics_score = (room_score + move_score + lease_score + budget_score) / 4.0
+
         prof = user.profile
         loc = user.location
-        cand_pref = user.roommate_preference
-        cand_acc = user.accommodation_preference
-
-        # Candidate's gender & accommodation type
-        candidate_gender = prof.gender.value if (prof and prof.gender) else None
-        candidate_accommodation_type = (
-            cand_acc.accommodation_type.value
-            if (cand_acc and cand_acc.accommodation_type)
-            else None
-        )
-
-        # Candidate's preferred gender for roommates
-        candidate_preferred_gender = (
-            cand_pref.preferred_gender.value
-            if (cand_pref and cand_pref.preferred_gender and cand_pref.preferred_gender.value != "any")
-            else None
-        )
-
-        # ── 1. Bidirectional Accommodation Type Filter ──────────────────────
-        # If accommodation type differs, do not show matches on both sides.
-        if current_accommodation_type is not None or candidate_accommodation_type is not None:
-            if current_accommodation_type != candidate_accommodation_type:
-                continue
-
-        # ── 2. Bidirectional Hard Gender Filter ─────────────────────────────
-        # If current user has a strict gender preference (female / male / non_binary),
-        # candidate's gender must match.
-        if current_preferred_gender is not None:
-            if candidate_gender != current_preferred_gender:
-                continue
-
-        # If candidate has a strict gender preference (female / male / non_binary),
-        # current user's gender must match (vice versa).
-        if candidate_preferred_gender is not None:
-            if current_user_gender != candidate_preferred_gender:
-                continue
-        # ────────────────────────────────────────────────────────────────────
-
+        
         s_dict, _ = build_student_from_user(user)
         user_id_str = str(user.id)
         s_dict["student_id"] = user_id_str
+        # Deliberately NOT adding logistics_score to s_dict to keep ML payload pure.
 
         # Capture public display info
         user_metadata[user_id_str] = {
@@ -211,8 +255,15 @@ def get_recommendations(
             "bio": prof.bio if prof else None,
             "city": loc.city if loc else None,
             "profile_photo_url": prof.profile_photo_url if prof else None,
+            "logistics_score": logistics_score,
         }
         candidate_records.append(s_dict)
+
+    # Extract logistics scores to pass to the ranking engine without polluting ML payloads
+    logistics_scores_dict = {
+        cid: meta.get("logistics_score", 0.0) 
+        for cid, meta in user_metadata.items()
+    }
 
     # Execute ML ranking & rule explainability
     ranked_candidates = rank_roommate_candidates(
@@ -220,6 +271,7 @@ def get_recommendations(
         candidate_students=candidate_records,
         top_n=top_n,
         min_label=min_label,
+        logistics_scores=logistics_scores_dict,
     )
 
     matches: List[CandidateMatchItem] = []
@@ -245,6 +297,7 @@ def get_recommendations(
                 rule_score=item["rule_based_explainability"]["rule_score"],
                 feature_breakdown=item["rule_based_explainability"]["feature_breakdown"],
             ),
+            logistics_score=meta.get("logistics_score", 0.0),
         )
         matches.append(match_item)
 

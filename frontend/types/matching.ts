@@ -50,3 +50,14 @@ export interface RecommendationResponse {
   matches: CandidateMatchItem[];
   total_evaluated: number;
 }
+
+/** Structured LLM explanation returned by GET /matching/why-this-match/{candidate_id} */
+export interface MatchBriefingResponse {
+  headline: string;
+  what_they_value: string;
+  living_style: string;
+  alignment_points: string[];
+  differences_to_discuss: string[];
+  questions_to_ask: string[];
+}
+

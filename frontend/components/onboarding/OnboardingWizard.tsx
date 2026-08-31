@@ -123,8 +123,6 @@ const INITIAL_FORM_STATE: OnboardingCreate = {
     preferred_gender: "any",
     min_age: 18,
     max_age: 35,
-    budget_min: 5000,
-    budget_max: 15000,
     social_style: "balanced",
     personal_space: "moderate",
     communication_style: "open_communication",
@@ -259,8 +257,6 @@ export default function OnboardingWizard() {
                     existing.preferences.preferred_gender || "any",
                   min_age: Number(existing.preferences.min_age) || 18,
                   max_age: Number(existing.preferences.max_age) || 35,
-                  budget_min: Number(existing.preferences.budget_min) || 5000,
-                  budget_max: Number(existing.preferences.budget_max) || 15000,
                   social_style:
                     existing.preferences.social_style || "balanced",
                   personal_space:
@@ -363,20 +359,20 @@ export default function OnboardingWizard() {
         errors.occupation = "Occupation is required.";
       }
 
-      // Bio validation (10–20 words, compulsory)
+      // Bio validation (4–20 words, compulsory)
       const bioText = (formData.profile.bio || "").trim();
-      const bioWords = bioText ? bioText.split(/\s+/).length : 0;
+      const bioWords = bioText ? bioText.split(/\s+/).filter(word => /[a-zA-Z0-9]/.test(word)).length : 0;
       if (!bioText) {
-        errors.bio = "Bio is required (10–20 words).";
-      } else if (bioWords < 10) {
-        errors.bio = `Bio must be at least 10 words (currently ${bioWords} words).`;
+        errors.bio = "Bio is required (4–20 words).";
+      } else if (bioWords < 4) {
+        errors.bio = `Bio must be at least 4 words (currently ${bioWords} words).`;
       } else if (bioWords > 20) {
         errors.bio = `Bio cannot exceed 20 words (currently ${bioWords} words).`;
       }
 
       // Roommate Expectations validation (20–250 words, compulsory)
       const expText = (formData.profile.roommate_expectations || "").trim();
-      const expWords = expText ? expText.split(/\s+/).length : 0;
+      const expWords = expText ? expText.split(/\s+/).filter(word => /[a-zA-Z0-9]/.test(word)).length : 0;
       if (!expText) {
         errors.roommate_expectations =
           "Roommate expectations are required (20–250 words).";
@@ -494,18 +490,6 @@ export default function OnboardingWizard() {
       if (minAge > maxAge) {
         errors.min_age = "Min age cannot exceed Max age.";
       }
-
-      const bMin = Number(formData.preferences.budget_min);
-      const bMax = Number(formData.preferences.budget_max);
-      if (isNaN(bMin) || bMin < 0) {
-        errors.budget_min = "Min budget must be non-negative.";
-      }
-      if (isNaN(bMax) || bMax < 0) {
-        errors.budget_max = "Max budget must be non-negative.";
-      }
-      if (bMin > bMax) {
-        errors.budget_min = "Min budget cannot exceed Max budget.";
-      }
     }
 
     setStepErrors(errors);
@@ -555,6 +539,18 @@ export default function OnboardingWizard() {
     setSubmitError(null);
 
     try {
+      const partialProfile: Record<string, any> = {};
+      const prof = formData.profile;
+      if (prof.first_name?.trim()) partialProfile.first_name = prof.first_name.trim();
+      if (prof.last_name?.trim()) partialProfile.last_name = prof.last_name.trim();
+      if (prof.date_of_birth) partialProfile.date_of_birth = prof.date_of_birth;
+      if (prof.gender) partialProfile.gender = prof.gender;
+      if (prof.occupation?.trim()) partialProfile.occupation = prof.occupation.trim();
+      if (prof.bio?.trim()) partialProfile.bio = prof.bio.trim();
+      if (prof.roommate_expectations?.trim())
+        partialProfile.roommate_expectations = prof.roommate_expectations.trim();
+      if (prof.profile_photo_url) partialProfile.profile_photo_url = prof.profile_photo_url;
+
       const partialLocation: Record<string, string> = {};
       const loc = formData.location;
       if (loc.country?.trim()) partialLocation.country = loc.country;
@@ -578,7 +574,8 @@ export default function OnboardingWizard() {
         partialAccommodation.budget_max = Number(acc.budget_max);
 
       const partialUpdate: OnboardingPartialUpdate = {
-        profile: formData.profile.first_name ? formData.profile : undefined,
+        profile:
+          Object.keys(partialProfile).length > 0 ? (partialProfile as any) : undefined,
         location:
           Object.keys(partialLocation).length > 0
             ? (partialLocation as any)
@@ -596,8 +593,18 @@ export default function OnboardingWizard() {
       setTimeout(() => {
         router.push("/");
       }, 500);
-    } catch {
-      setSubmitError("Couldn't save your progress. Please try again.");
+    } catch (err: unknown) {
+      const errorObj = err as {
+        response?: { data?: { detail?: string | Array<{ msg?: string }> } };
+      };
+      const detail = errorObj?.response?.data?.detail;
+      if (typeof detail === "string") {
+        setSubmitError(detail);
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        setSubmitError(detail[0]?.msg || "Validation error in submitted data.");
+      } else {
+        setSubmitError("Couldn't save your progress. Please try again.");
+      }
       setSavingExit(false);
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" });

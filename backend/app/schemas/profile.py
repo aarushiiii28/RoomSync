@@ -31,7 +31,7 @@ _MIN_LAST_NAME_LEN = 1
 _MAX_LAST_NAME_LEN = 100
 
 _MAX_OCCUPATION_LEN = 150
-_MIN_BIO_WORDS = 10
+_MIN_BIO_WORDS = 4
 _MAX_BIO_WORDS = 20
 _MIN_EXPECTATIONS_WORDS = 20
 _MAX_EXPECTATIONS_WORDS = 250
@@ -44,6 +44,15 @@ _MAX_AGE_YEARS = 100
 # ---------------------------------------------------------------------------
 # Request schemas (client → server)
 # ---------------------------------------------------------------------------
+
+
+import re
+
+def _count_words(text: str) -> int:
+    """Count words that contain at least one alphanumeric character."""
+    if not text:
+        return 0
+    return len([w for w in text.split() if re.search(r'[a-zA-Z0-9]', w)])
 
 
 class ProfileCreate(BaseModel):
@@ -67,7 +76,7 @@ class ProfileCreate(BaseModel):
         description="Current occupation or job title.",
     )
     bio: str = Field(
-        description="Personal bio visible to everyone (10–20 words required).",
+        description="Personal bio visible to everyone (4–20 words required).",
     )
     roommate_expectations: str = Field(
         description="Private expectations from roommate (20–250 words required).",
@@ -89,8 +98,7 @@ class ProfileCreate(BaseModel):
     @classmethod
     def validate_bio_word_count(cls, v: str) -> str:
         text = v.strip() if isinstance(v, str) else ""
-        words = text.split()
-        count = len(words)
+        count = _count_words(text)
         if count < _MIN_BIO_WORDS:
             raise ValueError(f"Bio must be at least {_MIN_BIO_WORDS} words (currently {count} words).")
         if count > _MAX_BIO_WORDS:
@@ -101,8 +109,7 @@ class ProfileCreate(BaseModel):
     @classmethod
     def validate_expectations_word_count(cls, v: str) -> str:
         text = v.strip() if isinstance(v, str) else ""
-        words = text.split()
-        count = len(words)
+        count = _count_words(text)
         if count < _MIN_EXPECTATIONS_WORDS:
             raise ValueError(
                 f"Roommate expectations must be at least {_MIN_EXPECTATIONS_WORDS} words (currently {count} words)."
@@ -159,11 +166,21 @@ class ProfileUpdate(BaseModel):
     roommate_expectations: str | None = Field(default=None)
     profile_photo_url: str | None = Field(default=None)
 
-    @field_validator("first_name", "last_name", mode="before")
+    @field_validator(
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "occupation",
+        "bio",
+        "roommate_expectations",
+        "profile_photo_url",
+        mode="before",
+    )
     @classmethod
-    def strip_whitespace(cls, v: str | None) -> str | None:
+    def empty_str_to_none(cls, v: Any) -> Any:
         if isinstance(v, str):
-            return v.strip()
+            stripped = v.strip()
+            return stripped if stripped else None
         return v
 
     @field_validator("bio")
@@ -172,8 +189,9 @@ class ProfileUpdate(BaseModel):
         if v is None:
             return v
         text = v.strip()
-        words = text.split()
-        count = len(words)
+        if not text:
+            return None
+        count = _count_words(text)
         if count < _MIN_BIO_WORDS:
             raise ValueError(f"Bio must be at least {_MIN_BIO_WORDS} words (currently {count} words).")
         if count > _MAX_BIO_WORDS:
@@ -186,8 +204,9 @@ class ProfileUpdate(BaseModel):
         if v is None:
             return v
         text = v.strip()
-        words = text.split()
-        count = len(words)
+        if not text:
+            return None
+        count = _count_words(text)
         if count < _MIN_EXPECTATIONS_WORDS:
             raise ValueError(
                 f"Roommate expectations must be at least {_MIN_EXPECTATIONS_WORDS} words (currently {count} words)."
