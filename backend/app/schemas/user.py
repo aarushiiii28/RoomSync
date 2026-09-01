@@ -39,6 +39,7 @@ class CurrentUserResponse(BaseModel):
     email: str | None
     email_verified: bool = False
     is_active: bool
+    has_password: bool = False
 
     created_at: datetime
     updated_at: datetime

@@ -4,10 +4,28 @@ import Link from "next/link";
 import DashboardGuard from "@/components/dashboard/DashboardGuard";
 import Navbar from "@/components/layout/Navbar";
 import RecommendationsGrid from "@/components/dashboard/RecommendationsGrid";
+import SetPasswordModal from "@/components/dashboard/SetPasswordModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  useEffect(() => {
+    // Show the modal if the user is loaded, has no password, and hasn't dismissed it this session
+    if (user && user.has_password === false) {
+      const dismissed = sessionStorage.getItem("dismissedPasswordModal");
+      if (!dismissed) {
+        setShowPasswordModal(true);
+      }
+    }
+  }, [user]);
+
+  const handleDismissModal = () => {
+    sessionStorage.setItem("dismissedPasswordModal", "true");
+    setShowPasswordModal(false);
+  };
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -54,9 +72,15 @@ export default function DashboardPage() {
               <RecommendationsGrid topN={10} />
             </div>
           </div>
-
         </main>
       </div>
+
+      {showPasswordModal && (
+        <SetPasswordModal 
+          onSuccess={handleDismissModal} 
+          defaultUsername={user?.username || ""} 
+        />
+      )}
     </DashboardGuard>
   );
 }

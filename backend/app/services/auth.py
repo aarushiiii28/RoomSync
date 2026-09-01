@@ -170,7 +170,7 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # where the user registered before Cognito was configured.
     if user and user.password_hash and user.is_active:
         if not verify_password(credentials.password, user.password_hash):
-            raise ValueError(f"DEBUG: verify_password failed for user {user.username}. Password provided: len={len(credentials.password)}")
+            raise ValueError("Incorrect password.")
         # Success path...
 
         if not user.email_verified:
@@ -202,7 +202,7 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # ── Nothing worked — surface the original Cognito error ───────────────────
     # If we get here, neither Cognito nor local fallback succeeded
     logger.warning("All authentication methods failed for identifier: %s", identifier)
-    raise ValueError(f"DEBUG: Invalid username or password fallback reached. user={user is not None}, has_hash={bool(user and user.password_hash)}, is_active={bool(user and user.is_active)}, cognito_err={str(cognito_error)}")
+    raise ValueError("Invalid username or password.")
 
 
 def google_login_callback(db: Session, code: str, redirect_uri: str | None = None) -> Token:
