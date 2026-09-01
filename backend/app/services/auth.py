@@ -136,9 +136,14 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
                 if user_by_email:
                     if user_by_email.cognito_sub and user_by_email.cognito_sub != sub_val:
                         raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
+                    
+                    if not user_by_email.cognito_sub:
+                        logger.info(f"MATCHING_PATH: email_match_backfilled_sub for native login (email: {email_val})")
+                    else:
+                        logger.info(f"MATCHING_PATH: Resolved native login via email fallback (sub already matched) for {email_val}")
+                        
                     user_by_sub = user_by_email
                     user_by_sub.cognito_sub = sub_val
-                    logger.info(f"MATCHING_PATH: Resolved native login via email fallback and linked cognito_sub for {email_val}")
                 else:
                     logger.info(f"MATCHING_PATH: No existing user found during native login for {email_val}")
             else:
@@ -267,9 +272,14 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
         if user_by_email:
             if user_by_email.cognito_sub and user_by_email.cognito_sub != str(sub):
                 raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
+            
+            if not user_by_email.cognito_sub:
+                logger.info(f"MATCHING_PATH: email_match_backfilled_sub for Google login (email: {clean_email})")
+            else:
+                logger.info(f"MATCHING_PATH: Resolved Google login via email fallback (sub already matched) for {clean_email}")
+
             user = user_by_email
             user.cognito_sub = str(sub)
-            logger.info(f"MATCHING_PATH: Resolved Google login via email fallback and linked cognito_sub for {clean_email}")
         else:
             logger.info(f"MATCHING_PATH: No existing user found during Google login for {clean_email}")
 
