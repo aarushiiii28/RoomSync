@@ -171,7 +171,8 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # where the user registered before Cognito was configured.
     if user and user.password_hash and user.is_active:
         if not verify_password(credentials.password, user.password_hash):
-            raise ValueError("Invalid username or password.")
+            raise ValueError(f"DEBUG: verify_password failed for user {user.username}. Password provided: len={len(credentials.password)}")
+        # Success path...
 
         if not user.email_verified:
             raise ValueError("Please verify your email before logging in.")
@@ -200,10 +201,9 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
         )
 
     # ── Nothing worked — surface the original Cognito error ───────────────────
-    if cognito_error is not None:
-        raise ValueError(str(cognito_error))
-
-    raise ValueError("Invalid username or password.")
+    # If we get here, neither Cognito nor local fallback succeeded
+    logger.warning("All authentication methods failed for identifier: %s", identifier)
+    raise ValueError(f"DEBUG: Invalid username or password fallback reached. user={user is not None}, has_hash={bool(user and user.password_hash)}, is_active={bool(user and user.is_active)}, cognito_err={str(cognito_error)}")
 
 
 def google_login_callback(db: Session, code: str, redirect_uri: str | None = None) -> Token:
@@ -271,7 +271,7 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
         user_by_email = db.query(User).filter(func.lower(User.email) == clean_email).first()
         if user_by_email:
             if user_by_email.cognito_sub and user_by_email.cognito_sub != str(sub):
-                raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
+                raise ValueError(f"DEBUG: Found user {user_by_email.username} with email {clean_email}. DB sub={user_by_email.cognito_sub}, Google sub={sub}. Mismatch!")
             
             if not user_by_email.cognito_sub:
                 logger.info(f"MATCHING_PATH: email_match_backfilled_sub for Google login (email: {clean_email})")
@@ -284,7 +284,8 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
             logger.info(f"MATCHING_PATH: No existing user found during Google login for {clean_email}")
 
     if not user:
-        # For a new user, use clean username (avoid raw Google ID prefix)
+        raise ValueError(f"DEBUG: user_by_email is None for {clean_email}. This will create a NEW user.")
+            
         display_name = username.strip() if (username and not username.lower().startswith("google_")) else clean_email.split("@")[0]
         
         # Ensure username uniqueness
