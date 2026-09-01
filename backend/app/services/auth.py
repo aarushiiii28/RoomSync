@@ -169,7 +169,7 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # ── Cognito failed — try local password fallback ───────────────────────────
     # This handles: missing AWS credentials, Cognito outage, or password mismatch
     # where the user registered before Cognito was configured.
-    if not is_cognito_configured() and user and user.password_hash and user.is_active:
+    if user and user.password_hash and user.is_active:
         if not verify_password(credentials.password, user.password_hash):
             raise ValueError("Invalid username or password.")
 

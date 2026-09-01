@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
 
   const checkAuth = useCallback(async () => {
+    setLoading(true);
     const token = tokenStorage.getAccessToken();
 
     if (!token) {
