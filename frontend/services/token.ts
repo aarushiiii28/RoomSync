@@ -33,6 +33,7 @@ export const tokenStorage = {
     }
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem("dismissedPasswordModal");
     window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
   },
 };

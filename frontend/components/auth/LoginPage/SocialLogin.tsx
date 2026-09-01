@@ -18,10 +18,15 @@ export default function SocialLogin() {
   }, [domain, clientId]);
 
   return (
-    <a
-      href={authUrl}
+    <button
+      type="button"
       onClick={() => {
+        if (!domain || !clientId) {
+          alert("Google Login is not configured correctly on this deployment. Please contact support.");
+          return;
+        }
         tokenStorage.clearTokens();
+        window.location.href = authUrl;
       }}
       className="
         w-full
@@ -48,6 +53,6 @@ export default function SocialLogin() {
       </svg>
 
       Continue with Google
-    </a>
+    </button>
   );
 }
