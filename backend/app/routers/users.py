@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.db.database import get_db
-from app.core.security import get_password_hash
+from app.services.security import hash_password
 
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -54,7 +54,7 @@ def set_credentials(
         )
 
     current_user.username = payload.username
-    current_user.password_hash = get_password_hash(payload.password)
+    current_user.password_hash = hash_password(payload.password)
     db.commit()
     
     return {"message": "Credentials updated successfully"}
