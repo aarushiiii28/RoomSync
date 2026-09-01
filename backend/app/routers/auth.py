@@ -296,3 +296,15 @@ def google_callback(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Authentication error: {str(exc)}",
         ) from exc
+
+
+@router.get("/debug/db")
+def debug_db(email: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    engine_url = str(db.get_bind().url)
+    return {
+        "engine_host": engine_url.split("@")[-1] if "@" in engine_url else engine_url,
+        "user_found": bool(user),
+        "has_hash": bool(user and user.password_hash),
+        "hash_value_prefix": user.password_hash[:10] if user and user.password_hash else None
+    }
