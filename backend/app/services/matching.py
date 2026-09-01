@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
@@ -190,7 +191,12 @@ def get_recommendations(
     candidate_users = (
         db.query(User)
         .join(LifestyleProfile, User.id == LifestyleProfile.user_id)
-        .filter(User.id != current_user.id, User.is_active == True)
+        .join(UserProfile, User.id == UserProfile.user_id)
+        .filter(
+            User.id != current_user.id, 
+            User.is_active == True,
+            func.trim(UserProfile.first_name) != ""
+        )
         .all()
     )
 

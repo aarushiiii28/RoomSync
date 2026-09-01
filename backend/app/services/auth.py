@@ -135,9 +135,8 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
                 user_by_email = db.query(User).filter(func.lower(User.email) == email_val.lower()).first()
                 if user_by_email:
                     if user_by_email.cognito_sub and user_by_email.cognito_sub != sub_val:
-                        raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
-                    
-                    if not user_by_email.cognito_sub:
+                        logger.info(f"MATCHING_PATH: Relaxing mismatch for native login. Overwriting sub for {email_val}")
+                    elif not user_by_email.cognito_sub:
                         logger.info(f"MATCHING_PATH: email_match_backfilled_sub for native login (email: {email_val})")
                     else:
                         logger.info(f"MATCHING_PATH: Resolved native login via email fallback (sub already matched) for {email_val}")
@@ -271,9 +270,8 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
         user_by_email = db.query(User).filter(func.lower(User.email) == clean_email).first()
         if user_by_email:
             if user_by_email.cognito_sub and user_by_email.cognito_sub != str(sub):
-                raise ValueError(f"DEBUG: Found user {user_by_email.username} with email {clean_email}. DB sub={user_by_email.cognito_sub}, Google sub={sub}. Mismatch!")
-            
-            if not user_by_email.cognito_sub:
+                logger.info(f"MATCHING_PATH: Relaxing mismatch for Google login. Overwriting sub for {clean_email}")
+            elif not user_by_email.cognito_sub:
                 logger.info(f"MATCHING_PATH: email_match_backfilled_sub for Google login (email: {clean_email})")
             else:
                 logger.info(f"MATCHING_PATH: Resolved Google login via email fallback (sub already matched) for {clean_email}")
@@ -284,8 +282,7 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
             logger.info(f"MATCHING_PATH: No existing user found during Google login for {clean_email}")
 
     if not user:
-        raise ValueError(f"DEBUG: user_by_email is None for {clean_email}. This will create a NEW user.")
-            
+        logger.info(f"MATCHING_PATH: Creating NEW user for {clean_email} via Google login")
         display_name = username.strip() if (username and not username.lower().startswith("google_")) else clean_email.split("@")[0]
         
         # Ensure username uniqueness
