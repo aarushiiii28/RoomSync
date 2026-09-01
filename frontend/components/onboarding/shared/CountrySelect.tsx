@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Globe, ChevronDown, Check } from "lucide-react";
+import { Globe, ChevronDown, Check, X } from "lucide-react";
 import { SUPPORTED_COUNTRIES } from "@/constants/locations";
 
 interface CountrySelectProps {
@@ -80,13 +80,28 @@ export default function CountrySelect({
           {value || "Select Country..."}
         </span>
 
-        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E849B] pointer-events-none">
-          <ChevronDown
-            size={16}
-            className={`transition-transform duration-200 ${
-              isOpen ? "rotate-180" : ""
-            }`}
-          />
+        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E849B] pointer-events-auto">
+          {value && !disabled ? (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+                setIsOpen(true);
+              }}
+              className="text-[#7E849B] hover:text-[#D97870] transition-colors cursor-pointer bg-white"
+            >
+              <X size={16} />
+            </button>
+          ) : (
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          )}
         </span>
       </button>
 

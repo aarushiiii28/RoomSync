@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { MapPin, ChevronDown, Check } from "lucide-react";
+import { MapPin, ChevronDown, Check, X } from "lucide-react";
 import { getCitiesForState } from "@/constants/locations";
 
 interface CitySelectProps {
@@ -154,24 +154,39 @@ export default function CitySelect({
           `}
         />
 
-        <button
-          type="button"
-          tabIndex={-1}
-          disabled={isFieldDisabled}
-          onClick={() => !isFieldDisabled && setIsOpen((prev) => !prev)}
-          className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E849B] ${
-            isFieldDisabled
-              ? "cursor-not-allowed opacity-50"
-              : "hover:text-[#2D3246] transition-colors cursor-pointer"
-          }`}
-        >
-          <ChevronDown
-            size={16}
-            className={`transition-transform duration-200 ${
-              isOpen ? "rotate-180" : ""
+        {value && !isFieldDisabled ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("");
+              setIsOpen(true);
+            }}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E849B] hover:text-[#D97870] transition-colors cursor-pointer bg-white"
+          >
+            <X size={16} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={isFieldDisabled}
+            onClick={() => !isFieldDisabled && setIsOpen((prev) => !prev)}
+            className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E849B] ${
+              isFieldDisabled
+                ? "cursor-not-allowed opacity-50"
+                : "hover:text-[#2D3246] transition-colors cursor-pointer"
             }`}
-          />
-        </button>
+          >
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        )}
       </div>
 
       {/* Autocomplete Dropdown List */}

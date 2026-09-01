@@ -49,7 +49,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="w-full flex justify-center pt-4 sm:pt-8 md:pt-12 px-4 sm:px-6 relative z-30">
+    <header className="w-full flex justify-center pt-4 sm:pt-6 md:pt-8 px-4 sm:px-6 sticky top-0 z-50">
       <nav
         className="
           w-full max-w-7xl h-16
