@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import GlobalPasswordModal from "@/components/dashboard/GlobalPasswordModal";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <GlobalPasswordModal />
         </AuthProvider>
       </body>
     </html>
