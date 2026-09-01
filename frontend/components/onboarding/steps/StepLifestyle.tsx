@@ -689,38 +689,10 @@ export default function StepLifestyle({
             </div>
           </div>
 
-          {/* Fitness */}
-          <div className="pt-3 border-t border-[#F0E4E0]">
-            <FormField
-              label="Fitness & Exercise"
-              required
-              labelClassName="text-[14px] font-bold text-[#2D3246]"
-              descriptionClassName="text-[12.5px] text-[#555B70]"
-              description="How often do you work out or exercise?"
-              error={errors.fitness}
-            >
-              <div className="pt-1">
-                <RadioGroup<FitnessLevel>
-                  name="fitness"
-                  options={FITNESS_OPTIONS}
-                  value={data.fitness}
-                  onChange={(fitness) => onChange({ fitness })}
-                />
-              </div>
-            </FormField>
-          </div>
 
           {/* Boolean Toggles */}
           <div className="pt-3 border-t border-[#F0E4E0]">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <ToggleSwitch
-                icon={<Music size={16} />}
-                label="Music at Home"
-                description="Frequently play audio/music aloud without headphones"
-                checked={data.music}
-                onChange={(music) => onChange({ music })}
-              />
-
               <ToggleSwitch
                 icon={<Laptop size={16} />}
                 label="Remote / Work From Home"

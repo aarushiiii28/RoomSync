@@ -22,7 +22,7 @@ def get_me(
     current_user: User = Depends(get_current_user),
 ):
     user_dict = {c.name: getattr(current_user, c.name) for c in current_user.__table__.columns}
-    user_dict["has_password"] = bool(current_user.password_hash)
+    user_dict["has_password"] = bool(current_user.password_hash) or not current_user.username.lower().startswith("google_")
     return user_dict
 
 

@@ -19,6 +19,7 @@ from fastapi import HTTPException, status
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.models.lifestyle_profile import LifestyleProfile
+from app.models.roommate_preference import RoommatePreference
 from app.schemas.matching import (
     CandidateMatchItem,
     PredictionResponse,
@@ -135,9 +136,10 @@ def is_authorized_match(requesting_user: User, candidate_user: User) -> bool:
     acc_type_a = acc_a.accommodation_type.value if (acc_a and acc_a.accommodation_type) else None
     acc_type_b = acc_b.accommodation_type.value if (acc_b and acc_b.accommodation_type) else None
     
-    if acc_type_a is not None or acc_type_b is not None:
+    if acc_type_a is not None and acc_type_b is not None:
         if acc_type_a != acc_type_b:
-            return False
+            if set([acc_type_a, acc_type_b]) != {"flat", "apartment"}:
+                return False
             
     # ── 2. Bidirectional Hard Gender Filter ─────────────────────────────
     gender_a = prof_a.gender.value if (prof_a and prof_a.gender) else None
@@ -150,6 +152,27 @@ def is_authorized_match(requesting_user: User, candidate_user: User) -> bool:
         return False
     if pref_gender_b is not None and gender_a != pref_gender_b:
         return False
+
+    # ── 2b. Age Limit Filter ────────────────────────────────────────────
+    # Requesting user's age preferences
+    from datetime import date
+    today = date.today()
+    
+    if prof_b and prof_b.date_of_birth:
+        age_b = today.year - prof_b.date_of_birth.year - ((today.month, today.day) < (prof_b.date_of_birth.month, prof_b.date_of_birth.day))
+        if pref_a:
+            if pref_a.min_age and age_b < pref_a.min_age:
+                return False
+            if pref_a.max_age and age_b > pref_a.max_age:
+                return False
+
+    if prof_a and prof_a.date_of_birth:
+        age_a = today.year - prof_a.date_of_birth.year - ((today.month, today.day) < (prof_a.date_of_birth.month, prof_a.date_of_birth.day))
+        if pref_b:
+            if pref_b.min_age and age_a < pref_b.min_age:
+                return False
+            if pref_b.max_age and age_a > pref_b.max_age:
+                return False
 
     # ── 3. One-directional Group-A Deal-breaker Filter ──────────────────
     # Check requesting_user's deal-breakers against candidate_user's lifestyle profile.
@@ -192,6 +215,7 @@ def get_recommendations(
         db.query(User)
         .join(LifestyleProfile, User.id == LifestyleProfile.user_id)
         .join(UserProfile, User.id == UserProfile.user_id)
+        .join(RoommatePreference, User.id == RoommatePreference.user_id)
         .filter(
             User.id != current_user.id, 
             User.is_active == True,
@@ -233,15 +257,7 @@ def get_recommendations(
             room_b = acc_b.room_type.value if acc_b.room_type else None
             room_score = score_room_preference(room_a, room_b)
             
-            move_a = acc_a.move_in_timeframe.value if acc_a.move_in_timeframe else None
-            move_b = acc_b.move_in_timeframe.value if acc_b.move_in_timeframe else None
-            move_score = score_move_in_timeframe(move_a, move_b)
-            
-            lease_a = acc_a.lease_duration.value if acc_a.lease_duration else None
-            lease_b = acc_b.lease_duration.value if acc_b.lease_duration else None
-            lease_score = score_lease_duration(lease_a, lease_b)
-            
-            logistics_score = (room_score + move_score + lease_score + budget_score) / 4.0
+            logistics_score = (room_score + budget_score) / 2.0
 
         prof = user.profile
         loc = user.location

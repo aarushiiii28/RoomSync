@@ -370,14 +370,14 @@ export default function OnboardingWizard() {
         errors.bio = `Bio cannot exceed 20 words (currently ${bioWords} words).`;
       }
 
-      // Roommate Expectations validation (20–250 words, compulsory)
+      // Roommate Expectations validation (5–250 words, compulsory)
       const expText = (formData.profile.roommate_expectations || "").trim();
       const expWords = expText ? expText.split(/\s+/).filter(word => /[a-zA-Z0-9]/.test(word)).length : 0;
       if (!expText) {
         errors.roommate_expectations =
-          "Roommate expectations are required (20–250 words).";
-      } else if (expWords < 20) {
-        errors.roommate_expectations = `Expectations must be at least 20 words (currently ${expWords} words).`;
+          "Roommate expectations are required (5–250 words).";
+      } else if (expWords < 5) {
+        errors.roommate_expectations = `Expectations must be at least 5 words (currently ${expWords} words).`;
       } else if (expWords > 250) {
         errors.roommate_expectations = `Expectations cannot exceed 250 words (currently ${expWords} words).`;
       }
@@ -430,9 +430,6 @@ export default function OnboardingWizard() {
         }
       }
     } else if (step === 3) {
-      if (!formData.accommodation.move_in_timeframe) {
-        errors.move_in_timeframe = "Expected move-in timeframe is required.";
-      }
       const bMin = Number(formData.accommodation.budget_min);
       const bMax = Number(formData.accommodation.budget_max);
       if (isNaN(bMin) || bMin < 0) {

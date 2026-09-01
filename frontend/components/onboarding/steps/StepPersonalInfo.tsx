@@ -201,13 +201,13 @@ export default function StepPersonalInfo({
               className={`text-[11px] font-medium ${
                 expWords === 0
                   ? "text-[#7E849B]"
-                  : expWords >= 20 && expWords <= 250
+                  : expWords >= 5 && expWords <= 250
                   ? "text-emerald-600"
                   : "text-amber-600"
               }`}
             >
-              {expWords} / 20–250 words
-              {expWords >= 20 && expWords <= 250 ? " ✓" : ""}
+              {expWords} / 5–250 words
+              {expWords >= 5 && expWords <= 250 ? " ✓" : ""}
             </span>
           </div>
         </div>

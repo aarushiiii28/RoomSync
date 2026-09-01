@@ -21,7 +21,6 @@ const ACCOMMODATION_OPTIONS: PillOption<AccommodationType>[] = [
   { value: "apartment", label: "Apartment" },
   { value: "flat", label: "Flat" },
   { value: "pg", label: "PG / Hostel" },
-  { value: "co_living", label: "Co-Living" },
   { value: "house", label: "Independent House" },
   { value: "other", label: "Other" },
 ];
@@ -84,37 +83,6 @@ export default function StepAccommodation({
         />
       </FormField>
 
-      {/* Expected Move-in Timeframe */}
-      <FormField
-        label="Expected Move-in"
-        required
-        description="An approximate timeframe helps us find roommates with similar plans."
-        error={errors.move_in_timeframe}
-      >
-        <PillGroup<MoveInTimeframe>
-          options={TIMEFRAME_OPTIONS}
-          value={data.move_in_timeframe}
-          onChange={(move_in_timeframe) => onChange({ move_in_timeframe })}
-          columns={3}
-          size="sm"
-        />
-      </FormField>
-
-      {/* Lease Duration */}
-      <FormField
-        label="Lease Duration"
-        required
-        description="How long do you plan to stay?"
-        error={errors.lease_duration}
-      >
-        <PillGroup<LeaseDuration>
-          options={LEASE_OPTIONS}
-          value={data.lease_duration}
-          onChange={(lease_duration) => onChange({ lease_duration })}
-          columns={3}
-          size="sm"
-        />
-      </FormField>
 
       {/* Budget Range */}
       <div className="p-4 rounded-lg bg-white border border-[#EBD6CF] shadow-xs space-y-3">
