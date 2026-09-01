@@ -45,11 +45,11 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     if clean_email:
         verified_user_email = (
             db.query(User)
-            .filter(func.lower(User.email) == clean_email, User.email_verified.is_(True))
+            .filter(func.lower(User.email) == clean_email)
             .first()
         )
         if verified_user_email:
-            raise ValueError("Email already exists and is verified. Please log in.")
+            raise ValueError("An account already exists for this email. Please log in instead.")
 
     # Register in Amazon Cognito User Pool / local fallback
     cognito_res = cognito_sign_up(
@@ -121,36 +121,34 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
         refresh_token = auth_result.get("refresh_token", "")
         token_type = auth_result.get("token_type", "bearer")
 
-        # Provision user in local DB if they only exist in Cognito
-        if not user and is_cognito_configured() and access_token:
+        if is_cognito_configured() and access_token:
             cognito_profile = cognito_get_user(access_token)
             username_val = cognito_profile.get("username") or cognito_identifier
             email_val = cognito_profile.get("email") or (identifier if "@" in identifier else None)
             sub_val = cognito_profile.get("sub")
 
-            user = (
-                db.query(User)
-                .filter(
-                    (User.cognito_sub == sub_val)
-                    | (func.lower(User.username) == username_val.lower())
-                    | (func.lower(User.email) == (email_val.lower() if email_val else None))
-                )
-                .first()
-            )
+            user_by_sub = None
+            if sub_val:
+                user_by_sub = db.query(User).filter(User.cognito_sub == sub_val).first()
+            
+            if not user_by_sub and email_val:
+                user_by_email = db.query(User).filter(func.lower(User.email) == email_val.lower()).first()
+                if user_by_email:
+                    if user_by_email.cognito_sub and user_by_email.cognito_sub != sub_val:
+                        raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
+                    user_by_sub = user_by_email
+                    user_by_sub.cognito_sub = sub_val
+                    logger.info(f"MATCHING_PATH: Resolved native login via email fallback and linked cognito_sub for {email_val}")
+                else:
+                    logger.info(f"MATCHING_PATH: No existing user found during native login for {email_val}")
+            else:
+                if user_by_sub:
+                    logger.info(f"MATCHING_PATH: Resolved native login via direct cognito_sub hit for sub {sub_val}")
+            
+            user = user_by_sub
 
             if not user:
-                user = User(
-                    id=uuid4(),
-                    username=username_val,
-                    email=email_val,
-                    cognito_sub=sub_val,
-                    email_verified=True,
-                    is_active=True,
-                    last_login_at=now,
-                )
-                db.add(user)
-                db.commit()
-                db.refresh(user)
+                raise ValueError("User profile not found locally. Please contact support or migrate data.")
 
         if user:
             user.last_login_at = now
@@ -166,7 +164,7 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # ── Cognito failed — try local password fallback ───────────────────────────
     # This handles: missing AWS credentials, Cognito outage, or password mismatch
     # where the user registered before Cognito was configured.
-    if user and user.password_hash and user.is_active:
+    if not is_cognito_configured() and user and user.password_hash and user.is_active:
         if not verify_password(credentials.password, user.password_hash):
             raise ValueError("Invalid username or password.")
 
@@ -256,13 +254,24 @@ def google_login_callback(db: Session, code: str, redirect_uri: str | None = Non
 
     clean_email = email.strip().lower()
 
-    # 3. Sync local database: Match by email first to link to existing native account
+    # 3. Sync local database: Match by cognito_sub first
     now = datetime.now(timezone.utc)
-    user = (
-        db.query(User)
-        .filter(func.lower(User.email) == clean_email)
-        .first()
-    )
+    user = None
+    if sub:
+        user = db.query(User).filter(User.cognito_sub == str(sub)).first()
+        if user:
+            logger.info(f"MATCHING_PATH: Resolved Google login via direct cognito_sub hit for sub {sub}")
+    
+    if not user and clean_email:
+        user_by_email = db.query(User).filter(func.lower(User.email) == clean_email).first()
+        if user_by_email:
+            if user_by_email.cognito_sub and user_by_email.cognito_sub != str(sub):
+                raise ValueError("This email is linked to a different sign-in method. Please try logging in the way you originally signed up, or contact support.")
+            user = user_by_email
+            user.cognito_sub = str(sub)
+            logger.info(f"MATCHING_PATH: Resolved Google login via email fallback and linked cognito_sub for {clean_email}")
+        else:
+            logger.info(f"MATCHING_PATH: No existing user found during Google login for {clean_email}")
 
     if not user:
         # For a new user, use clean username (avoid raw Google ID prefix)
