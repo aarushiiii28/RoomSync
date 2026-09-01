@@ -197,7 +197,7 @@ export default function MatchDetailPage() {
       <div className="min-h-screen flex flex-col bg-transparent">
         <Navbar />
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-12 pb-16">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-[120px] sm:pt-[140px] pb-16">
           {/* Loading State */}
           {loading && (
             <div
