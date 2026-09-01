@@ -16,17 +16,17 @@ export default function DashboardPage() {
       <div className="min-h-screen flex flex-col bg-transparent">
         <Navbar />
 
-        <main className="flex-1 w-full flex flex-col h-full pt-[80px]">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 pb-10 flex flex-col h-full">
 
           {/* ── Outer card wrapping the whole page content ── */}
           <div
-            className="flex-1 flex flex-col h-full"
+            className="rounded-2xl overflow-hidden shadow-2xl flex-1 flex flex-col h-full"
             style={{ background: "#F8ECE8" }}
           >
             {/* ── Welcome header bar ── */}
             <div
               className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-8 py-5 sm:py-6"
-              style={{ background: "#007599" }}
+              style={{ background: "#494F66" }}
             >
               <div>
                 <h1 className="text-[20px] sm:text-[24px] font-bold tracking-tight text-white font-sans">

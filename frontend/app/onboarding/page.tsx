@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 export default function OnboardingPage() {
   return (
     <OnboardingGuard>
-      <main className="min-h-screen w-full flex flex-col bg-[#007599]">
+      <main className="min-h-screen py-10 px-4 sm:px-6 flex flex-col justify-center items-center bg-[#545B73]">
         <Suspense
           fallback={
             <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">

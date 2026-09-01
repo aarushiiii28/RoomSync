@@ -664,11 +664,11 @@ export default function OnboardingWizard() {
   }
 
   return (
-    <div className="w-full h-full min-h-screen flex flex-col flex-1">
-      {/* Split Container */}
-      <div className="flex flex-col md:flex-row flex-1 bg-[#F8ECE8]">
-        {/* Left Sidebar (Clear Blue Sky Theme #007599) */}
-        <div className="w-full md:w-[280px] lg:w-[310px] bg-[#007599] p-8 sm:p-9 flex flex-col justify-between shrink-0 select-none">
+    <div className="w-full max-w-[1040px] mx-auto my-auto">
+      {/* Split Card Container */}
+      <div className="rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[620px] bg-[#F8ECE8]">
+        {/* Left Sidebar (Dark Slate Theme #494F66) */}
+        <div className="w-full md:w-[280px] lg:w-[310px] bg-[#494F66] p-8 sm:p-9 flex flex-col justify-between shrink-0 select-none">
           <div>
             {/* RoomSync Logo + Brand */}
             <Link href="/" className="flex items-center gap-3.5 group">
@@ -901,8 +901,8 @@ export default function OnboardingWizard() {
                   className="
                     px-6 sm:px-9 py-2 sm:py-2.5
                     rounded-full
-                    bg-[#007599]
-                    hover:bg-[#005F7A]
+                    bg-[#494F66]
+                    hover:bg-[#3D4359]
                     text-white
                     text-[13px] sm:text-[14px]
                     font-semibold
@@ -924,8 +924,8 @@ export default function OnboardingWizard() {
                     flex items-center gap-2
                     px-6 sm:px-9 py-2 sm:py-2.5
                     rounded-full
-                    bg-[#007599]
-                    hover:bg-[#005F7A]
+                    bg-[#494F66]
+                    hover:bg-[#3D4359]
                     text-white
                     text-[13px] sm:text-[14px]
                     font-semibold
