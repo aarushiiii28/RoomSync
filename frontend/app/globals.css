@@ -90,10 +90,12 @@ body::before {
     width: 100%;
     height: 100%;
     background: 
-        linear-gradient(180deg, rgba(9, 10, 15, 0.82) 0%, rgba(9, 10, 15, 0.70) 50%, rgba(9, 10, 15, 0.88) 100%),
-        url("/images/background.jpg") center center / cover no-repeat;
+        linear-gradient(180deg, rgba(9, 10, 15, 0.5) 0%, rgba(9, 10, 15, 0.4) 50%, rgba(9, 10, 15, 0.6) 100%),
+        url("/images/sunset_bg.jpg") center center / cover no-repeat;
     z-index: -999;
     pointer-events: none;
+    filter: blur(8px);
+    transform: scale(1.05);
 }
 
 /* Hardware-accelerated 60fps CSS rotation animations */

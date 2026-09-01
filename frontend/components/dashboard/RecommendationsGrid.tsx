@@ -60,28 +60,14 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
         <Users className="w-6 h-6" style={{ color: "#D97870" }} />
       </div>
       <h3 className="text-[18px] font-bold mb-2" style={{ color: "#2D3246" }}>
-        No Matches Yet
+        No matches yet — but we haven't stopped looking.
       </h3>
       <p
-        className="text-[13px] max-w-xs leading-relaxed mb-5"
+        className="text-[14px] max-w-sm leading-relaxed mb-5"
         style={{ color: "#494F66" }}
       >
-        We couldn't find compatible roommates yet. Try refreshing or updating
-        your profile.
+        New people join RoomSync all the time. The moment someone who could be a great fit shows up, we'll email you — no need to keep checking back.
       </p>
-      <button
-        id="empty-refresh-btn"
-        onClick={onRefresh}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer hover:opacity-90 active:scale-95"
-        style={{
-          background: "#F6D7CF",
-          border: "1.5px solid #E5ADA2",
-          color: "#D97870",
-        }}
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        Refresh
-      </button>
     </motion.div>
   );
 }
