@@ -19,6 +19,7 @@ export interface CurrentUser {
   is_active: boolean;
   email_verified?: boolean;
   is_email_verified?: boolean;
+  has_password?: boolean;
 }
 
 export async function checkUsernameAvailability(username: string): Promise<{ available: boolean; message: string }> {

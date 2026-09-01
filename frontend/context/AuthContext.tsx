@@ -12,6 +12,7 @@ export interface UserProfileInfo {
   lastName?: string;
   email?: string | null;
   profilePhotoUrl?: string | null;
+  has_password?: boolean;
 }
 
 export interface AuthContextType {
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userId = userAccount.id;
       const username = userAccount.username || "";
       const userEmail = userAccount.email || null;
+      const has_password = userAccount.has_password || false;
 
       // 2. Fetch Onboarding Profile (first_name, last_name, avatar, is_complete)
       let firstName = "";
@@ -126,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         firstName,
         lastName,
         profilePhotoUrl: photoUrl,
+        has_password,
       });
     } catch {
       tokenStorage.clearTokens();
