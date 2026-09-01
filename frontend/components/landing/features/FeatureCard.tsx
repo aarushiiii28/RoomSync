@@ -22,8 +22,8 @@ export default function FeatureCard({ feature }: Props) {
         rounded-2xl
         border
         border-white/10
-        bg-[#121923]/90
-        backdrop-blur-sm
+        bg-white/10
+        backdrop-blur-md
         p-6
         flex
         flex-col
@@ -32,7 +32,7 @@ export default function FeatureCard({ feature }: Props) {
         h-full
         transition-colors
         hover:border-pink-500/40
-        hover:bg-[#151f2c]
+        hover:bg-white/20
         cursor-default
       "
     >
@@ -57,7 +57,7 @@ export default function FeatureCard({ feature }: Props) {
         className="
           mt-2.5
           text-sm
-          text-zinc-400
+          text-zinc-200
           leading-relaxed
         "
       >

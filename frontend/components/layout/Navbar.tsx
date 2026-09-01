@@ -57,7 +57,8 @@ export default function Navbar() {
           px-4 sm:px-6 md:px-8
           rounded-2xl
           border border-white/10
-          bg-[#151721]
+          bg-[#151721]/40
+          backdrop-blur-lg
           shadow-[0_8px_32px_rgba(0,0,0,0.4)]
           relative
         "

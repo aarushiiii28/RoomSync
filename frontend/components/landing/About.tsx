@@ -57,7 +57,7 @@ export default function About() {
             </span>
           </h2>
 
-          <p className="mt-4 text-base sm:text-lg leading-relaxed text-zinc-400 max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg leading-relaxed text-zinc-200 max-w-2xl mx-auto">
             RoomSync was built out of a simple frustration — finding a compatible roommate
             through random listings is broken. We set out to fix it using behavioral science
             and AI, so people can share spaces they actually enjoy living in.
@@ -69,13 +69,13 @@ export default function About() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 sm:p-6 text-center hover:border-pink-500/30 hover:bg-white/[0.07] transition-all duration-300"
+              className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md p-5 sm:p-6 text-center hover:border-pink-500/30 hover:bg-white/20 transition-all duration-300"
             >
               <p className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-[linear-gradient(135deg,#F28695,#F2BFB4)]">
                 {stat.value}
               </p>
               <p className="mt-1.5 text-[13px] sm:text-sm font-semibold text-white">{stat.label}</p>
-              <p className="mt-1 text-[11px] sm:text-[12px] text-zinc-500 leading-snug">{stat.sub}</p>
+              <p className="mt-1 text-[11px] sm:text-[12px] text-zinc-200 leading-snug">{stat.sub}</p>
             </div>
           ))}
         </div>
@@ -88,25 +88,25 @@ export default function About() {
             </span>
             <h3 className="mt-3 text-2xl sm:text-3xl font-bold text-white leading-snug">
               Compatibility is a science,<br />
-              <span className="text-zinc-400 font-normal">not a guess.</span>
+              <span className="text-zinc-200 font-normal">not a guess.</span>
             </h3>
             <p className="mt-5 text-[14px] sm:text-[15px] leading-7 text-zinc-400">
               Every recommended match on RoomSync is powered by a multi-signal compatibility engine
               that weighs sleep schedules, cleanliness standards, social boundaries, study habits,
               and personality dimensions — not just a location and a price range.
             </p>
-            <p className="mt-4 text-[14px] sm:text-[15px] leading-7 text-zinc-400">
+            <p className="mt-4 text-[14px] sm:text-[15px] leading-7 text-zinc-200">
               We believe the best shared living experiences start long before move-in day. They
               start with the right introduction.
             </p>
 
             {/* Divider with quote */}
             <div className="mt-8 pl-5 border-l-2 border-pink-400/50">
-              <p className="text-[14px] italic text-zinc-300 leading-6">
+              <p className="text-[14px] italic text-zinc-200 leading-6">
                 "The average person spends 3–6 months in a bad living situation before finding
                 the courage to move. We think that number should be zero."
               </p>
-              <p className="mt-2 text-[12px] text-zinc-500 font-medium">— RoomSync Team</p>
+              <p className="mt-2 text-[12px] text-zinc-300 font-medium">— RoomSync Team</p>
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function About() {
             <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
               Your ideal roommate is already on RoomSync.
             </h3>
-            <p className="text-zinc-400 text-[14px] sm:text-[15px] leading-relaxed max-w-xl mx-auto mb-8">
+            <p className="text-zinc-200 text-[14px] sm:text-[15px] leading-relaxed max-w-xl mx-auto mb-8">
               Build your compatibility profile in under 5 minutes and get matched with roommates
               who actually fit your lifestyle.
             </p>
@@ -161,7 +161,7 @@ export default function About() {
         </div>
 
         {/* ── Footer-style tiny note ── */}
-        <p className="text-center text-[12px] text-zinc-600 mt-10">
+        <p className="text-center text-[12px] text-zinc-300 mt-10">
           RoomSync is a people-first platform. No landlord listings. No spam. Just compatible people.
         </p>
 

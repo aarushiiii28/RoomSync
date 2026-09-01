@@ -49,7 +49,7 @@ export default function FloatingStatCard({
           boxShadow: `0 8px 32px ${glowColor.replace("0.25", "0.5")}, 0 0 0 1px rgba(255,255,255,0.08)`,
         }}
       >
-        <p className="text-[10px] font-medium tracking-widest text-gray-500 uppercase">{label}</p>
+        <p className="text-[10px] font-medium tracking-widest text-gray-300 uppercase">{label}</p>
         <p className="mt-0.5 text-[15px] font-semibold text-white">{value}</p>
       </motion.div>
     </motion.div>

@@ -16,7 +16,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex flex-col bg-transparent">
         <Navbar />
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 pb-10 flex flex-col h-full">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-[120px] sm:pt-[140px] pb-10 flex flex-col h-full">
 
           {/* ── Outer card wrapping the whole page content ── */}
           <div
