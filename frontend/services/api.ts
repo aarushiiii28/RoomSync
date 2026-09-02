@@ -111,7 +111,7 @@ api.interceptors.response.use(
 
     // Mask internal server errors and raw database traces
     if (error.response?.data) {
-      const detail = error.response.data.detail;
+      const detail = (error.response.data as any).detail;
       if (
         error.response.status >= 500 ||
         (typeof detail === "string" && (
@@ -122,7 +122,7 @@ api.interceptors.response.use(
           detail.length > 150
         ))
       ) {
-        error.response.data.detail = "Something went wrong!";
+        (error.response.data as any).detail = "Something went wrong!";
       }
     }
 
