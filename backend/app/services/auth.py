@@ -202,6 +202,10 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
     # ── Nothing worked — surface the original Cognito error ───────────────────
     # If we get here, neither Cognito nor local fallback succeeded
     logger.warning("All authentication methods failed for identifier: %s", identifier)
+    
+    if user and not user.password_hash:
+        raise ValueError("This account was created with Google. Please use 'Continue with Google' to log in.")
+        
     raise ValueError("Invalid username or password.")
 
 
