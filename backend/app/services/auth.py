@@ -201,10 +201,15 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
 
     # ── Nothing worked — surface the original Cognito error ───────────────────
     # If we get here, neither Cognito nor local fallback succeeded
-    logger.warning("All authentication methods failed for identifier: %s", identifier)
+    logger.warning("All authentication methods failed for identifier: %s, cognito_error: %s", identifier, cognito_error)
     
     if user and not user.password_hash:
-        raise ValueError("This account was created with Google. Please use 'Continue with Google' to log in.")
+        # If Cognito said UserNotFound, and we have them in the DB without a password, they are a Google user
+        if cognito_error and "User not found" in str(cognito_error):
+            raise ValueError("This account was created with Google. Please use 'Continue with Google' to log in.")
+        # If Cognito said Invalid username or password, it means they typed the wrong password for their Cognito account
+        elif cognito_error and "Invalid username or password" in str(cognito_error):
+            raise ValueError("Incorrect password.")
         
     raise ValueError("Invalid username or password.")
 
