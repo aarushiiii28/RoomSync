@@ -109,6 +109,23 @@ api.interceptors.response.use(
       }
     }
 
+    // Mask internal server errors and raw database traces
+    if (error.response?.data) {
+      const detail = error.response.data.detail;
+      if (
+        error.response.status >= 500 ||
+        (typeof detail === "string" && (
+          detail.toLowerCase().includes("psycopg") ||
+          detail.toLowerCase().includes("sqlalchemy") ||
+          detail.toLowerCase().includes("operationalerror") ||
+          detail.toLowerCase().includes("connection to server") ||
+          detail.length > 150
+        ))
+      ) {
+        error.response.data.detail = "Something went wrong!";
+      }
+    }
+
     return Promise.reject(error);
   }
 );

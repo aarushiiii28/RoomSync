@@ -292,9 +292,11 @@ def google_callback(
             detail=str(exc),
         ) from exc
     except Exception as exc:
+        import logging
+        logging.error(f"Unhandled authentication error: {exc}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Authentication error: {str(exc)}",
+            detail="Something went wrong!",
         ) from exc
 
 
