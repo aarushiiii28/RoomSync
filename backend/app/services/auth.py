@@ -152,7 +152,17 @@ def login_user(db: Session, credentials: UserLogin) -> Token:
             user = user_by_sub
 
             if not user:
-                raise ValueError("User profile not found locally. Please contact support or migrate data.")
+                logger.info(f"MATCHING_PATH: Auto-recovering missing local user from Cognito for {email_val}")
+                user = User(
+                    id=uuid4(),
+                    username=username_val or (email_val.split("@")[0] if email_val else f"user_{str(uuid4())[:8]}"),
+                    email=email_val,
+                    cognito_sub=str(sub_val) if sub_val else None,
+                    email_verified=True,
+                    is_active=True,
+                )
+                db.add(user)
+                # Don't commit yet, let the block below commit it
 
         if user:
             user.last_login_at = now
